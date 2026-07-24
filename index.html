@@ -1,0 +1,543 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#172033">
+  <title>Ballistics</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --panel: #172033;
+      --text: #f5f7fb;
+      --muted: #b9c2d3;
+      --accent: #f1b84b;
+      --border: rgba(255, 255, 255, 0.14);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background: #0e1422;
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body {
+      display: grid;
+      place-items: center;
+      padding: 16px;
+    }
+
+    .game-shell {
+      width: min(100%, 1000px);
+      display: grid;
+      gap: 12px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 0 4px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.35rem, 4vw, 2rem);
+      letter-spacing: 0.16em;
+    }
+
+    .stage-label {
+      color: var(--muted);
+      font-size: 0.95rem;
+      text-align: right;
+    }
+
+    .canvas-wrap {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: #8fc8ec;
+      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 16 / 9;
+      touch-action: none;
+    }
+
+    .status {
+      position: absolute;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: max-content;
+      max-width: calc(100% - 24px);
+      padding: 8px 13px;
+      border-radius: 999px;
+      background: rgba(12, 18, 30, 0.78);
+      color: #fff;
+      text-align: center;
+      font-weight: 700;
+      backdrop-filter: blur(6px);
+      pointer-events: none;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
+      gap: 12px;
+      align-items: end;
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: var(--panel);
+    }
+
+    .control {
+      display: grid;
+      gap: 7px;
+      min-width: 0;
+    }
+
+    .control-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    output {
+      color: var(--text);
+      font-weight: 800;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    button {
+      min-height: 50px;
+      border: 0;
+      border-radius: 12px;
+      padding: 0 24px;
+      background: var(--accent);
+      color: #241707;
+      font: inherit;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+    }
+
+    button:hover:not(:disabled) { filter: brightness(1.08); }
+    button:active:not(:disabled) { transform: translateY(1px); }
+    button:disabled { cursor: not-allowed; opacity: 0.45; }
+
+    .readout {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 0 4px;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .wind {
+      color: var(--text);
+      font-weight: 800;
+    }
+
+    @media (max-width: 680px) {
+      body { padding: 8px; }
+      .controls { grid-template-columns: 1fr 1fr; }
+      button { grid-column: 1 / -1; width: 100%; }
+      .readout { font-size: 0.84rem; }
+    }
+  </style>
+</head>
+<body>
+  <main class="game-shell" aria-label="Ballistics artillery game">
+    <div class="topbar">
+      <h1>BALLISTICS</h1>
+      <div class="stage-label">Stage 1 · Open Hills</div>
+    </div>
+
+    <section class="canvas-wrap">
+      <canvas id="game" width="960" height="540" aria-label="Two cannons facing each other across a valley"></canvas>
+      <div id="status" class="status" aria-live="polite">Your turn</div>
+    </section>
+
+    <section class="controls" aria-label="Cannon controls">
+      <label class="control" for="angle">
+        <span class="control-head"><span>ANGLE</span><output id="angleValue">45°</output></span>
+        <input id="angle" type="range" min="10" max="80" value="45" step="1">
+      </label>
+
+      <label class="control" for="power">
+        <span class="control-head"><span>POWER</span><output id="powerValue">70</output></span>
+        <input id="power" type="range" min="30" max="100" value="70" step="1">
+      </label>
+
+      <button id="fire" type="button">FIRE</button>
+    </section>
+
+    <div class="readout">
+      <span id="wind" class="wind">Wind: calm</span>
+      <span>Destroy the enemy cannon.</span>
+    </div>
+  </main>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const canvas = document.getElementById("game");
+      const ctx = canvas.getContext("2d");
+      const angleInput = document.getElementById("angle");
+      const powerInput = document.getElementById("power");
+      const angleValue = document.getElementById("angleValue");
+      const powerValue = document.getElementById("powerValue");
+      const fireButton = document.getElementById("fire");
+      const statusEl = document.getElementById("status");
+      const windEl = document.getElementById("wind");
+
+      const WORLD = { width: 960, height: 540, gravity: 170, speedScale: 3.6 };
+      const cannons = {
+        player: { x: 108, color: "#303b4d" },
+        cpu: { x: 852, color: "#6f302d" }
+      };
+
+      const state = {
+        turn: "player",
+        projectile: null,
+        winner: null,
+        wind: 0,
+        lastTime: 0,
+        cpuTimer: null,
+        cpuAngle: 45
+      };
+
+      function terrainY(x) {
+        const leftHill = 78 * Math.exp(-Math.pow((x - 105) / 185, 2));
+        const rightHill = 78 * Math.exp(-Math.pow((x - 855) / 185, 2));
+        const valley = 18 * Math.exp(-Math.pow((x - 480) / 240, 2));
+        return 430 - leftHill - rightHill + valley;
+      }
+
+      function cannonPosition(side) {
+        const cannon = cannons[side];
+        return { x: cannon.x, y: terrainY(cannon.x) - 11 };
+      }
+
+      function randomWind() {
+        const raw = Math.round((Math.random() * 16 - 8) * 2) / 2;
+        return Math.abs(raw) < 1 ? 0 : raw;
+      }
+
+      function setWind(value) {
+        state.wind = value;
+        if (value === 0) {
+          windEl.textContent = "Wind: calm";
+          return;
+        }
+        const arrow = value > 0 ? "→" : "←";
+        windEl.textContent = `Wind: ${arrow} ${Math.abs(value).toFixed(1)}`;
+      }
+
+      function setStatus(message) {
+        statusEl.textContent = message;
+      }
+
+      function setControlsEnabled(enabled) {
+        angleInput.disabled = !enabled;
+        powerInput.disabled = !enabled;
+        fireButton.disabled = !enabled;
+      }
+
+      function updateReadouts() {
+        angleValue.textContent = `${angleInput.value}°`;
+        powerValue.textContent = powerInput.value;
+      }
+
+      function barrelTip(side, angleDegrees) {
+        const pos = cannonPosition(side);
+        const direction = side === "player" ? 1 : -1;
+        const radians = angleDegrees * Math.PI / 180;
+        return {
+          x: pos.x + Math.cos(radians) * 27 * direction,
+          y: pos.y - 12 - Math.sin(radians) * 27
+        };
+      }
+
+      function fire(side, angleDegrees, power) {
+        if (state.projectile || state.winner) return;
+
+        const origin = barrelTip(side, angleDegrees);
+        const direction = side === "player" ? 1 : -1;
+        const radians = angleDegrees * Math.PI / 180;
+        const speed = power * WORLD.speedScale;
+
+        state.projectile = {
+          owner: side,
+          x: origin.x,
+          y: origin.y,
+          vx: Math.cos(radians) * speed * direction,
+          vy: -Math.sin(radians) * speed,
+          trail: []
+        };
+
+        setControlsEnabled(false);
+        setStatus(side === "player" ? "Shot away…" : "Enemy fires…");
+      }
+
+      function targetHit(projectile) {
+        const targetSide = projectile.owner === "player" ? "cpu" : "player";
+        const target = cannonPosition(targetSide);
+        const dx = projectile.x - target.x;
+        const dy = projectile.y - (target.y - 9);
+        return Math.hypot(dx, dy) <= 24;
+      }
+
+      function finishShot(message) {
+        state.projectile = null;
+
+        if (state.turn === "player") {
+          state.turn = "cpu";
+          setStatus(message || "Enemy is aiming…");
+          state.cpuTimer = window.setTimeout(cpuTurn, 850);
+        } else {
+          state.turn = "player";
+          setStatus(message || "Your turn");
+          setControlsEnabled(true);
+        }
+      }
+
+      function endRound(winner) {
+        state.winner = winner;
+        state.projectile = null;
+        setControlsEnabled(false);
+        setStatus(winner === "player" ? "Direct hit — you win!" : "Direct hit — CPU wins");
+        fireButton.disabled = false;
+        fireButton.textContent = "NEW ROUND";
+      }
+
+      function cpuTurn() {
+        state.cpuTimer = null;
+        if (state.winner) return;
+
+        const cpu = cannonPosition("cpu");
+        const player = cannonPosition("player");
+        const distance = Math.abs(cpu.x - player.x);
+        const angle = 38 + Math.random() * 18;
+        const radians = angle * Math.PI / 180;
+        const idealSpeed = Math.sqrt((distance * WORLD.gravity) / Math.max(0.2, Math.sin(2 * radians)));
+        const windCorrection = state.wind * 0.7;
+        const error = 0.93 + Math.random() * 0.14;
+        const power = Math.max(30, Math.min(100, ((idealSpeed + windCorrection) / WORLD.speedScale) * error));
+
+        state.cpuAngle = angle;
+        fire("cpu", angle, power);
+      }
+
+      function updateProjectile(dt) {
+        const p = state.projectile;
+        if (!p) return;
+
+        p.vx += state.wind * 4 * dt;
+        p.vy += WORLD.gravity * dt;
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+
+        p.trail.push({ x: p.x, y: p.y });
+        if (p.trail.length > 30) p.trail.shift();
+
+        if (targetHit(p)) {
+          endRound(p.owner);
+          return;
+        }
+
+        const outOfBounds = p.x < -30 || p.x > WORLD.width + 30 || p.y > WORLD.height + 30;
+        const hitGround = p.x >= 0 && p.x <= WORLD.width && p.y >= terrainY(p.x);
+
+        if (outOfBounds) {
+          finishShot("Long shot…");
+        } else if (hitGround) {
+          finishShot("Impact.");
+        }
+      }
+
+      function drawSky() {
+        const gradient = ctx.createLinearGradient(0, 0, 0, WORLD.height);
+        gradient.addColorStop(0, "#7db9e3");
+        gradient.addColorStop(0.7, "#d7ecf3");
+        gradient.addColorStop(1, "#f0dcac");
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, WORLD.width, WORLD.height);
+
+        ctx.fillStyle = "rgba(255,255,255,0.55)";
+        drawCloud(210, 100, 1.05);
+        drawCloud(665, 145, 0.85);
+      }
+
+      function drawCloud(x, y, scale) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.scale(scale, scale);
+        ctx.beginPath();
+        ctx.arc(-28, 5, 18, 0, Math.PI * 2);
+        ctx.arc(-7, -4, 25, 0, Math.PI * 2);
+        ctx.arc(20, 5, 20, 0, Math.PI * 2);
+        ctx.rect(-28, 5, 48, 20);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      function drawDistantHills() {
+        ctx.fillStyle = "#75987a";
+        ctx.beginPath();
+        ctx.moveTo(0, 350);
+        ctx.quadraticCurveTo(155, 245, 310, 350);
+        ctx.quadraticCurveTo(475, 225, 635, 350);
+        ctx.quadraticCurveTo(790, 255, 960, 350);
+        ctx.lineTo(960, 540);
+        ctx.lineTo(0, 540);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      function drawTerrain() {
+        const ground = ctx.createLinearGradient(0, 330, 0, 540);
+        ground.addColorStop(0, "#4d7a48");
+        ground.addColorStop(1, "#29452d");
+        ctx.fillStyle = ground;
+        ctx.beginPath();
+        ctx.moveTo(0, terrainY(0));
+        for (let x = 0; x <= WORLD.width; x += 5) {
+          ctx.lineTo(x, terrainY(x));
+        }
+        ctx.lineTo(WORLD.width, WORLD.height);
+        ctx.lineTo(0, WORLD.height);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.strokeStyle = "#87a85e";
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        for (let x = 0; x <= WORLD.width; x += 5) {
+          const y = terrainY(x);
+          if (x === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      }
+
+      function drawCannon(side) {
+        const cannon = cannons[side];
+        const pos = cannonPosition(side);
+        const angle = side === "player" ? Number(angleInput.value) : state.cpuAngle;
+        const direction = side === "player" ? 1 : -1;
+        const radians = angle * Math.PI / 180;
+
+        ctx.save();
+        ctx.translate(pos.x, pos.y);
+
+        ctx.fillStyle = cannon.color;
+        ctx.beginPath();
+        ctx.arc(-12, 2, 10, 0, Math.PI * 2);
+        ctx.arc(12, 2, 10, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.strokeStyle = cannon.color;
+        ctx.lineWidth = 10;
+        ctx.lineCap = "round";
+        ctx.beginPath();
+        ctx.moveTo(0, -10);
+        ctx.lineTo(Math.cos(radians) * 28 * direction, -10 - Math.sin(radians) * 28);
+        ctx.stroke();
+
+        ctx.fillStyle = cannon.color;
+        ctx.fillRect(-19, -13, 38, 17);
+        ctx.restore();
+      }
+
+      function drawProjectile() {
+        const p = state.projectile;
+        if (!p) return;
+
+        if (p.trail.length > 1) {
+          ctx.strokeStyle = "rgba(70, 68, 62, 0.35)";
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          p.trail.forEach((point, index) => {
+            if (index === 0) ctx.moveTo(point.x, point.y);
+            else ctx.lineTo(point.x, point.y);
+          });
+          ctx.stroke();
+        }
+
+        ctx.fillStyle = "#252629";
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 6, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      function draw() {
+        drawSky();
+        drawDistantHills();
+        drawTerrain();
+        drawCannon("player");
+        drawCannon("cpu");
+        drawProjectile();
+      }
+
+      function frame(timestamp) {
+        const dt = Math.min(0.033, (timestamp - state.lastTime) / 1000 || 0);
+        state.lastTime = timestamp;
+        updateProjectile(dt);
+        draw();
+        window.requestAnimationFrame(frame);
+      }
+
+      function newRound() {
+        if (state.cpuTimer) window.clearTimeout(state.cpuTimer);
+        state.turn = "player";
+        state.projectile = null;
+        state.winner = null;
+        state.cpuAngle = 45;
+        fireButton.textContent = "FIRE";
+        angleInput.value = "45";
+        powerInput.value = "70";
+        updateReadouts();
+        setWind(randomWind());
+        setStatus("Your turn");
+        setControlsEnabled(true);
+      }
+
+      angleInput.addEventListener("input", updateReadouts);
+      powerInput.addEventListener("input", updateReadouts);
+      fireButton.addEventListener("click", () => {
+        if (state.winner) {
+          newRound();
+          return;
+        }
+        if (state.turn !== "player" || state.projectile) return;
+        fire("player", Number(angleInput.value), Number(powerInput.value));
+      });
+
+      newRound();
+      window.requestAnimationFrame(frame);
+    })();
+  </script>
+</body>
+</html>
