@@ -214,8 +214,20 @@
 
       const WORLD = { width: 960, height: 540, gravity: 170, speedScale: 3.6 };
       const cannons = {
-        player: { x: 108, color: "#303b4d" },
-        cpu: { x: 852, color: "#6f302d" }
+        player: {
+          x: 108,
+          barrel: "#303940",
+          barrelLight: "#667078",
+          wood: "#7a4b27",
+          woodLight: "#b0783e"
+        },
+        cpu: {
+          x: 852,
+          barrel: "#572d2a",
+          barrelLight: "#9b5950",
+          wood: "#684323",
+          woodLight: "#a9753d"
+        }
       };
 
       const state = {
@@ -237,7 +249,7 @@
 
       function cannonPosition(side) {
         const cannon = cannons[side];
-        return { x: cannon.x, y: terrainY(cannon.x) - 11 };
+        return { x: cannon.x, y: terrainY(cannon.x) - 15 };
       }
 
       function randomWind() {
@@ -275,8 +287,8 @@
         const direction = side === "player" ? 1 : -1;
         const radians = angleDegrees * Math.PI / 180;
         return {
-          x: pos.x + Math.cos(radians) * 27 * direction,
-          y: pos.y - 12 - Math.sin(radians) * 27
+          x: pos.x + Math.cos(radians) * 48 * direction,
+          y: pos.y - 15 - Math.sin(radians) * 48
         };
       }
 
@@ -305,8 +317,8 @@
         const targetSide = projectile.owner === "player" ? "cpu" : "player";
         const target = cannonPosition(targetSide);
         const dx = projectile.x - target.x;
-        const dy = projectile.y - (target.y - 9);
-        return Math.hypot(dx, dy) <= 24;
+        const dy = projectile.y - (target.y - 8);
+        return Math.hypot(dx, dy) <= 27;
       }
 
       function finishShot(message) {
@@ -379,47 +391,207 @@
 
       function drawSky() {
         const gradient = ctx.createLinearGradient(0, 0, 0, WORLD.height);
-        gradient.addColorStop(0, "#7db9e3");
-        gradient.addColorStop(0.7, "#d7ecf3");
-        gradient.addColorStop(1, "#f0dcac");
+        gradient.addColorStop(0, "#5f9fd0");
+        gradient.addColorStop(0.48, "#b9d9e8");
+        gradient.addColorStop(0.78, "#f4ddb0");
+        gradient.addColorStop(1, "#d8c183");
         ctx.fillStyle = gradient;
         ctx.fillRect(0, 0, WORLD.width, WORLD.height);
 
-        ctx.fillStyle = "rgba(255,255,255,0.55)";
-        drawCloud(210, 100, 1.05);
-        drawCloud(665, 145, 0.85);
+        const sunGlow = ctx.createRadialGradient(765, 92, 8, 765, 92, 78);
+        sunGlow.addColorStop(0, "rgba(255,248,205,0.95)");
+        sunGlow.addColorStop(0.28, "rgba(255,229,151,0.48)");
+        sunGlow.addColorStop(1, "rgba(255,229,151,0)");
+        ctx.fillStyle = sunGlow;
+        ctx.beginPath();
+        ctx.arc(765, 92, 78, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "rgba(255,249,218,0.9)";
+        ctx.beginPath();
+        ctx.arc(765, 92, 24, 0, Math.PI * 2);
+        ctx.fill();
+
+        drawCloud(178, 92, 0.95, 0.58);
+        drawCloud(510, 126, 0.72, 0.42);
+        drawCloud(842, 178, 0.62, 0.34);
+        drawBirds();
       }
 
-      function drawCloud(x, y, scale) {
+      function drawCloud(x, y, scale, opacity) {
         ctx.save();
         ctx.translate(x, y);
         ctx.scale(scale, scale);
+        ctx.fillStyle = `rgba(255,255,245,${opacity})`;
         ctx.beginPath();
-        ctx.arc(-28, 5, 18, 0, Math.PI * 2);
-        ctx.arc(-7, -4, 25, 0, Math.PI * 2);
-        ctx.arc(20, 5, 20, 0, Math.PI * 2);
-        ctx.rect(-28, 5, 48, 20);
+        ctx.arc(-31, 7, 18, 0, Math.PI * 2);
+        ctx.arc(-8, -3, 25, 0, Math.PI * 2);
+        ctx.arc(20, 6, 20, 0, Math.PI * 2);
+        ctx.arc(40, 11, 13, 0, Math.PI * 2);
+        ctx.rect(-31, 7, 71, 19);
         ctx.fill();
         ctx.restore();
       }
 
-      function drawDistantHills() {
-        ctx.fillStyle = "#75987a";
+      function drawBirds() {
+        ctx.strokeStyle = "rgba(48,70,78,0.55)";
+        ctx.lineWidth = 1.6;
+        ctx.lineCap = "round";
+        [[330, 112, 7], [354, 128, 5], [610, 82, 6], [633, 96, 4]].forEach(([x, y, size]) => {
+          ctx.beginPath();
+          ctx.arc(x - size / 2, y, size / 2, Math.PI * 1.08, Math.PI * 1.92);
+          ctx.arc(x + size / 2, y, size / 2, Math.PI * 1.08, Math.PI * 1.92);
+          ctx.stroke();
+        });
+      }
+
+      function drawMountains() {
+        ctx.fillStyle = "#9eb6bd";
         ctx.beginPath();
-        ctx.moveTo(0, 350);
-        ctx.quadraticCurveTo(155, 245, 310, 350);
-        ctx.quadraticCurveTo(475, 225, 635, 350);
-        ctx.quadraticCurveTo(790, 255, 960, 350);
-        ctx.lineTo(960, 540);
-        ctx.lineTo(0, 540);
+        ctx.moveTo(0, 312);
+        ctx.lineTo(92, 224);
+        ctx.lineTo(150, 274);
+        ctx.lineTo(242, 174);
+        ctx.lineTo(318, 267);
+        ctx.lineTo(405, 206);
+        ctx.lineTo(492, 287);
+        ctx.lineTo(596, 166);
+        ctx.lineTo(680, 269);
+        ctx.lineTo(775, 205);
+        ctx.lineTo(872, 282);
+        ctx.lineTo(960, 225);
+        ctx.lineTo(960, 380);
+        ctx.lineTo(0, 380);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = "rgba(240,245,239,0.82)";
+        ctx.beginPath();
+        ctx.moveTo(206, 214);
+        ctx.lineTo(242, 174);
+        ctx.lineTo(276, 216);
+        ctx.lineTo(260, 207);
+        ctx.lineTo(246, 220);
+        ctx.lineTo(231, 205);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(552, 217);
+        ctx.lineTo(596, 166);
+        ctx.lineTo(637, 217);
+        ctx.lineTo(616, 205);
+        ctx.lineTo(599, 221);
+        ctx.lineTo(581, 203);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = "rgba(111,139,145,0.54)";
+        ctx.beginPath();
+        ctx.moveTo(0, 341);
+        ctx.quadraticCurveTo(125, 247, 252, 340);
+        ctx.quadraticCurveTo(380, 251, 520, 342);
+        ctx.quadraticCurveTo(676, 238, 810, 341);
+        ctx.quadraticCurveTo(892, 282, 960, 326);
+        ctx.lineTo(960, 405);
+        ctx.lineTo(0, 405);
         ctx.closePath();
         ctx.fill();
       }
 
+      function drawPastoralValley() {
+        const meadow = ctx.createLinearGradient(0, 292, 0, 452);
+        meadow.addColorStop(0, "#9db578");
+        meadow.addColorStop(1, "#68875d");
+        ctx.fillStyle = meadow;
+        ctx.beginPath();
+        ctx.moveTo(0, 333);
+        ctx.quadraticCurveTo(170, 287, 325, 351);
+        ctx.quadraticCurveTo(476, 399, 636, 335);
+        ctx.quadraticCurveTo(805, 282, 960, 342);
+        ctx.lineTo(960, 468);
+        ctx.lineTo(0, 468);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = "rgba(127,173,188,0.78)";
+        ctx.beginPath();
+        ctx.moveTo(448, 351);
+        ctx.bezierCurveTo(493, 363, 527, 376, 519, 395);
+        ctx.bezierCurveTo(511, 414, 565, 429, 626, 447);
+        ctx.lineTo(567, 456);
+        ctx.bezierCurveTo(512, 432, 477, 412, 488, 392);
+        ctx.bezierCurveTo(497, 376, 466, 365, 420, 356);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.strokeStyle = "rgba(231,242,228,0.55)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(452, 354);
+        ctx.bezierCurveTo(497, 367, 527, 379, 520, 396);
+        ctx.stroke();
+
+        drawVillage();
+        drawTreeLine();
+      }
+
+      function drawVillage() {
+        const houses = [
+          [365, 338, 17, 12, "#d8c59c", "#7f4933"],
+          [391, 344, 14, 10, "#cbb88b", "#72402f"],
+          [650, 329, 18, 13, "#d8c59c", "#774331"],
+          [677, 338, 15, 11, "#c7b384", "#693b2f"]
+        ];
+
+        houses.forEach(([x, y, w, h, wall, roof]) => {
+          ctx.fillStyle = wall;
+          ctx.fillRect(x, y, w, h);
+          ctx.fillStyle = roof;
+          ctx.beginPath();
+          ctx.moveTo(x - 3, y);
+          ctx.lineTo(x + w / 2, y - 8);
+          ctx.lineTo(x + w + 3, y);
+          ctx.closePath();
+          ctx.fill();
+          ctx.fillStyle = "rgba(50,49,42,0.6)";
+          ctx.fillRect(x + w * 0.43, y + h * 0.45, 3, h * 0.55);
+        });
+
+        ctx.fillStyle = "#d7c596";
+        ctx.fillRect(628, 316, 9, 25);
+        ctx.fillStyle = "#6e3f31";
+        ctx.beginPath();
+        ctx.moveTo(624, 316);
+        ctx.lineTo(632.5, 303);
+        ctx.lineTo(641, 316);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      function drawTreeLine() {
+        const trees = [
+          [286, 349, 13], [309, 356, 10], [334, 346, 15],
+          [703, 347, 13], [731, 340, 16], [756, 351, 11]
+        ];
+
+        trees.forEach(([x, y, size]) => {
+          ctx.fillStyle = "#4e6749";
+          ctx.beginPath();
+          ctx.arc(x, y - size * 0.55, size * 0.62, 0, Math.PI * 2);
+          ctx.arc(x - size * 0.42, y - size * 0.28, size * 0.48, 0, Math.PI * 2);
+          ctx.arc(x + size * 0.42, y - size * 0.28, size * 0.48, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = "#574630";
+          ctx.fillRect(x - 1.5, y - 4, 3, 8);
+        });
+      }
+
       function drawTerrain() {
         const ground = ctx.createLinearGradient(0, 330, 0, 540);
-        ground.addColorStop(0, "#4d7a48");
-        ground.addColorStop(1, "#29452d");
+        ground.addColorStop(0, "#547f45");
+        ground.addColorStop(0.36, "#3d673a");
+        ground.addColorStop(1, "#213d2b");
         ctx.fillStyle = ground;
         ctx.beginPath();
         ctx.moveTo(0, terrainY(0));
@@ -431,7 +603,7 @@
         ctx.closePath();
         ctx.fill();
 
-        ctx.strokeStyle = "#87a85e";
+        ctx.strokeStyle = "#8daf61";
         ctx.lineWidth = 4;
         ctx.beginPath();
         for (let x = 0; x <= WORLD.width; x += 5) {
@@ -440,6 +612,64 @@
           else ctx.lineTo(x, y);
         }
         ctx.stroke();
+
+        drawForegroundDetails();
+      }
+
+      function drawForegroundDetails() {
+        ctx.strokeStyle = "rgba(156,190,98,0.75)";
+        ctx.lineWidth = 1.4;
+        const grassTufts = [48, 172, 236, 704, 785, 916];
+        grassTufts.forEach((x, index) => {
+          const y = terrainY(x) + 4 + (index % 2) * 2;
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.lineTo(x - 5, y - 11);
+          ctx.moveTo(x, y);
+          ctx.lineTo(x + 1, y - 14);
+          ctx.moveTo(x, y);
+          ctx.lineTo(x + 6, y - 9);
+          ctx.stroke();
+        });
+
+        ctx.fillStyle = "rgba(46,57,45,0.38)";
+        [[190, 6], [744, 7], [905, 5]].forEach(([x, r]) => {
+          ctx.beginPath();
+          ctx.ellipse(x, terrainY(x) - 1, r * 1.5, r, -0.18, 0, Math.PI * 2);
+          ctx.fill();
+        });
+      }
+
+      function drawWheel(x, y, radius, colors) {
+        ctx.save();
+        ctx.translate(x, y);
+
+        ctx.fillStyle = "rgba(26,23,19,0.3)";
+        ctx.beginPath();
+        ctx.arc(2, 2, radius + 2, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.strokeStyle = colors.wood;
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.arc(0, 0, radius, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.strokeStyle = colors.woodLight;
+        ctx.lineWidth = 2.2;
+        for (let i = 0; i < 10; i += 1) {
+          const angle = i * Math.PI / 5;
+          ctx.beginPath();
+          ctx.moveTo(Math.cos(angle) * 3, Math.sin(angle) * 3);
+          ctx.lineTo(Math.cos(angle) * (radius - 3), Math.sin(angle) * (radius - 3));
+          ctx.stroke();
+        }
+
+        ctx.fillStyle = colors.barrel;
+        ctx.beginPath();
+        ctx.arc(0, 0, 4.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
       }
 
       function drawCannon(side) {
@@ -452,22 +682,78 @@
         ctx.save();
         ctx.translate(pos.x, pos.y);
 
-        ctx.fillStyle = cannon.color;
+        ctx.fillStyle = "rgba(20,28,22,0.35)";
         ctx.beginPath();
-        ctx.arc(-12, 2, 10, 0, Math.PI * 2);
-        ctx.arc(12, 2, 10, 0, Math.PI * 2);
+        ctx.ellipse(-4 * direction, 16, 32, 7, 0, 0, Math.PI * 2);
         ctx.fill();
 
-        ctx.strokeStyle = cannon.color;
-        ctx.lineWidth = 10;
-        ctx.lineCap = "round";
+        ctx.scale(direction, 1);
+
+        ctx.fillStyle = cannon.wood;
         ctx.beginPath();
-        ctx.moveTo(0, -10);
-        ctx.lineTo(Math.cos(radians) * 28 * direction, -10 - Math.sin(radians) * 28);
+        ctx.moveTo(-33, 4);
+        ctx.lineTo(-5, -9);
+        ctx.lineTo(18, -7);
+        ctx.lineTo(13, 5);
+        ctx.lineTo(-28, 10);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.strokeStyle = cannon.woodLight;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(-29, 5);
+        ctx.lineTo(13, -3);
         ctx.stroke();
 
-        ctx.fillStyle = cannon.color;
-        ctx.fillRect(-19, -13, 38, 17);
+        drawWheel(-7, 3, 16, cannon);
+
+        ctx.fillStyle = cannon.barrel;
+        ctx.beginPath();
+        ctx.arc(0, -13, 6.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.save();
+        ctx.translate(0, -15);
+        ctx.rotate(-radians);
+
+        const barrelGradient = ctx.createLinearGradient(0, -7, 0, 7);
+        barrelGradient.addColorStop(0, cannon.barrelLight);
+        barrelGradient.addColorStop(0.4, cannon.barrel);
+        barrelGradient.addColorStop(1, "#1d2326");
+        ctx.fillStyle = barrelGradient;
+        ctx.beginPath();
+        ctx.moveTo(-12, -7);
+        ctx.lineTo(38, -4.8);
+        ctx.lineTo(48, -5.8);
+        ctx.lineTo(48, 5.8);
+        ctx.lineTo(38, 4.8);
+        ctx.lineTo(-12, 7);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = cannon.barrel;
+        ctx.fillRect(38, -7.4, 10, 14.8);
+        ctx.fillStyle = cannon.barrelLight;
+        ctx.fillRect(40, -5.4, 2, 10.8);
+
+        ctx.fillStyle = cannon.barrel;
+        ctx.beginPath();
+        ctx.arc(-13, 0, 8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(-21, 0, 4, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "rgba(220,229,224,0.26)";
+        ctx.fillRect(4, -4.4, 27, 1.6);
+        ctx.restore();
+
+        ctx.fillStyle = cannon.barrel;
+        ctx.beginPath();
+        ctx.arc(0, -13, 3, 0, Math.PI * 2);
+        ctx.fill();
+
         ctx.restore();
       }
 
@@ -494,7 +780,8 @@
 
       function draw() {
         drawSky();
-        drawDistantHills();
+        drawMountains();
+        drawPastoralValley();
         drawTerrain();
         drawCannon("player");
         drawCannon("cpu");
