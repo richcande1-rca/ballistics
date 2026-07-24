@@ -240,6 +240,11 @@
         cpuAngle: 45
       };
 
+      const backdrop = document.createElement("canvas");
+      backdrop.width = WORLD.width;
+      backdrop.height = WORLD.height;
+      const bg = backdrop.getContext("2d");
+
       function terrainY(x) {
         const leftHill = 78 * Math.exp(-Math.pow((x - 105) / 185, 2));
         const rightHill = 78 * Math.exp(-Math.pow((x - 855) / 185, 2));
@@ -389,255 +394,386 @@
         }
       }
 
-      function drawSky() {
-        const gradient = ctx.createLinearGradient(0, 0, 0, WORLD.height);
-        gradient.addColorStop(0, "#5f9fd0");
-        gradient.addColorStop(0.48, "#b9d9e8");
-        gradient.addColorStop(0.78, "#f4ddb0");
-        gradient.addColorStop(1, "#d8c183");
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, WORLD.width, WORLD.height);
-
-        const sunGlow = ctx.createRadialGradient(765, 92, 8, 765, 92, 78);
-        sunGlow.addColorStop(0, "rgba(255,248,205,0.95)");
-        sunGlow.addColorStop(0.28, "rgba(255,229,151,0.48)");
-        sunGlow.addColorStop(1, "rgba(255,229,151,0)");
-        ctx.fillStyle = sunGlow;
-        ctx.beginPath();
-        ctx.arc(765, 92, 78, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.fillStyle = "rgba(255,249,218,0.9)";
-        ctx.beginPath();
-        ctx.arc(765, 92, 24, 0, Math.PI * 2);
-        ctx.fill();
-
-        drawCloud(178, 92, 0.95, 0.58);
-        drawCloud(510, 126, 0.72, 0.42);
-        drawCloud(842, 178, 0.62, 0.34);
-        drawBirds();
+      function seededRandom(seed) {
+        let value = seed >>> 0;
+        return () => {
+          value += 0x6D2B79F5;
+          let t = value;
+          t = Math.imul(t ^ (t >>> 15), t | 1);
+          t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+          return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
       }
 
-      function drawCloud(x, y, scale, opacity) {
-        ctx.save();
-        ctx.translate(x, y);
-        ctx.scale(scale, scale);
-        ctx.fillStyle = `rgba(255,255,245,${opacity})`;
-        ctx.beginPath();
-        ctx.arc(-31, 7, 18, 0, Math.PI * 2);
-        ctx.arc(-8, -3, 25, 0, Math.PI * 2);
-        ctx.arc(20, 6, 20, 0, Math.PI * 2);
-        ctx.arc(40, 11, 13, 0, Math.PI * 2);
-        ctx.rect(-31, 7, 71, 19);
-        ctx.fill();
-        ctx.restore();
+      function drawCloud(g, x, y, scale, opacity) {
+        g.save();
+        g.translate(x, y);
+        g.scale(scale, scale);
+
+        g.fillStyle = `rgba(91,119,137,${opacity * 0.18})`;
+        g.beginPath();
+        g.ellipse(5, 18, 56, 13, 0, 0, Math.PI * 2);
+        g.fill();
+
+        g.fillStyle = `rgba(255,251,233,${opacity})`;
+        g.beginPath();
+        g.arc(-34, 7, 18, 0, Math.PI * 2);
+        g.arc(-12, -3, 27, 0, Math.PI * 2);
+        g.arc(17, 3, 23, 0, Math.PI * 2);
+        g.arc(39, 10, 15, 0, Math.PI * 2);
+        g.rect(-34, 7, 73, 21);
+        g.fill();
+        g.restore();
       }
 
-      function drawBirds() {
-        ctx.strokeStyle = "rgba(48,70,78,0.55)";
-        ctx.lineWidth = 1.6;
-        ctx.lineCap = "round";
-        [[330, 112, 7], [354, 128, 5], [610, 82, 6], [633, 96, 4]].forEach(([x, y, size]) => {
-          ctx.beginPath();
-          ctx.arc(x - size / 2, y, size / 2, Math.PI * 1.08, Math.PI * 1.92);
-          ctx.arc(x + size / 2, y, size / 2, Math.PI * 1.08, Math.PI * 1.92);
-          ctx.stroke();
+      function drawSky(g) {
+        const sky = g.createLinearGradient(0, 0, 0, 380);
+        sky.addColorStop(0, "#5b91be");
+        sky.addColorStop(0.48, "#a8c9d7");
+        sky.addColorStop(0.78, "#e7d3a8");
+        sky.addColorStop(1, "#d8bd82");
+        g.fillStyle = sky;
+        g.fillRect(0, 0, WORLD.width, WORLD.height);
+
+        const glow = g.createRadialGradient(760, 92, 6, 760, 92, 112);
+        glow.addColorStop(0, "rgba(255,250,213,0.96)");
+        glow.addColorStop(0.22, "rgba(255,232,164,0.48)");
+        glow.addColorStop(1, "rgba(255,232,164,0)");
+        g.fillStyle = glow;
+        g.fillRect(630, 0, 260, 225);
+
+        g.fillStyle = "rgba(255,247,210,0.93)";
+        g.beginPath();
+        g.arc(760, 92, 24, 0, Math.PI * 2);
+        g.fill();
+
+        drawCloud(g, 164, 92, 0.95, 0.7);
+        drawCloud(g, 475, 118, 0.72, 0.5);
+        drawCloud(g, 868, 165, 0.62, 0.42);
+
+        g.strokeStyle = "rgba(47,70,78,0.55)";
+        g.lineWidth = 1.5;
+        g.lineCap = "round";
+        [[322,112,7],[346,126,5],[604,81,6],[628,95,4]].forEach(([x,y,s]) => {
+          g.beginPath();
+          g.arc(x - s / 2, y, s / 2, Math.PI * 1.08, Math.PI * 1.92);
+          g.arc(x + s / 2, y, s / 2, Math.PI * 1.08, Math.PI * 1.92);
+          g.stroke();
         });
       }
 
-      function drawMountains() {
-        ctx.fillStyle = "#9eb6bd";
-        ctx.beginPath();
-        ctx.moveTo(0, 312);
-        ctx.lineTo(92, 224);
-        ctx.lineTo(150, 274);
-        ctx.lineTo(242, 174);
-        ctx.lineTo(318, 267);
-        ctx.lineTo(405, 206);
-        ctx.lineTo(492, 287);
-        ctx.lineTo(596, 166);
-        ctx.lineTo(680, 269);
-        ctx.lineTo(775, 205);
-        ctx.lineTo(872, 282);
-        ctx.lineTo(960, 225);
-        ctx.lineTo(960, 380);
-        ctx.lineTo(0, 380);
-        ctx.closePath();
-        ctx.fill();
-
-        ctx.fillStyle = "rgba(240,245,239,0.82)";
-        ctx.beginPath();
-        ctx.moveTo(206, 214);
-        ctx.lineTo(242, 174);
-        ctx.lineTo(276, 216);
-        ctx.lineTo(260, 207);
-        ctx.lineTo(246, 220);
-        ctx.lineTo(231, 205);
-        ctx.closePath();
-        ctx.fill();
-
-        ctx.beginPath();
-        ctx.moveTo(552, 217);
-        ctx.lineTo(596, 166);
-        ctx.lineTo(637, 217);
-        ctx.lineTo(616, 205);
-        ctx.lineTo(599, 221);
-        ctx.lineTo(581, 203);
-        ctx.closePath();
-        ctx.fill();
-
-        ctx.fillStyle = "rgba(111,139,145,0.54)";
-        ctx.beginPath();
-        ctx.moveTo(0, 341);
-        ctx.quadraticCurveTo(125, 247, 252, 340);
-        ctx.quadraticCurveTo(380, 251, 520, 342);
-        ctx.quadraticCurveTo(676, 238, 810, 341);
-        ctx.quadraticCurveTo(892, 282, 960, 326);
-        ctx.lineTo(960, 405);
-        ctx.lineTo(0, 405);
-        ctx.closePath();
-        ctx.fill();
+      function drawMountainRange(g, points, fill, baseY) {
+        g.fillStyle = fill;
+        g.beginPath();
+        g.moveTo(0, baseY);
+        points.forEach(([x, y]) => g.lineTo(x, y));
+        g.lineTo(WORLD.width, baseY);
+        g.closePath();
+        g.fill();
       }
 
-      function drawPastoralValley() {
-        const meadow = ctx.createLinearGradient(0, 292, 0, 452);
-        meadow.addColorStop(0, "#9db578");
-        meadow.addColorStop(1, "#68875d");
-        ctx.fillStyle = meadow;
-        ctx.beginPath();
-        ctx.moveTo(0, 333);
-        ctx.quadraticCurveTo(170, 287, 325, 351);
-        ctx.quadraticCurveTo(476, 399, 636, 335);
-        ctx.quadraticCurveTo(805, 282, 960, 342);
-        ctx.lineTo(960, 468);
-        ctx.lineTo(0, 468);
-        ctx.closePath();
-        ctx.fill();
+      function drawMountains(g) {
+        drawMountainRange(g, [
+          [0,290],[72,226],[126,272],[201,190],[263,260],[339,218],[405,276],
+          [492,195],[568,274],[648,161],[723,265],[805,205],[882,278],[960,220]
+        ], "#aabcc0", 356);
 
-        ctx.fillStyle = "rgba(127,173,188,0.78)";
-        ctx.beginPath();
-        ctx.moveTo(448, 351);
-        ctx.bezierCurveTo(493, 363, 527, 376, 519, 395);
-        ctx.bezierCurveTo(511, 414, 565, 429, 626, 447);
-        ctx.lineTo(567, 456);
-        ctx.bezierCurveTo(512, 432, 477, 412, 488, 392);
-        ctx.bezierCurveTo(497, 376, 466, 365, 420, 356);
-        ctx.closePath();
-        ctx.fill();
-
-        ctx.strokeStyle = "rgba(231,242,228,0.55)";
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(452, 354);
-        ctx.bezierCurveTo(497, 367, 527, 379, 520, 396);
-        ctx.stroke();
-
-        drawVillage();
-        drawTreeLine();
-      }
-
-      function drawVillage() {
-        const houses = [
-          [365, 338, 17, 12, "#d8c59c", "#7f4933"],
-          [391, 344, 14, 10, "#cbb88b", "#72402f"],
-          [650, 329, 18, 13, "#d8c59c", "#774331"],
-          [677, 338, 15, 11, "#c7b384", "#693b2f"]
-        ];
-
-        houses.forEach(([x, y, w, h, wall, roof]) => {
-          ctx.fillStyle = wall;
-          ctx.fillRect(x, y, w, h);
-          ctx.fillStyle = roof;
-          ctx.beginPath();
-          ctx.moveTo(x - 3, y);
-          ctx.lineTo(x + w / 2, y - 8);
-          ctx.lineTo(x + w + 3, y);
-          ctx.closePath();
-          ctx.fill();
-          ctx.fillStyle = "rgba(50,49,42,0.6)";
-          ctx.fillRect(x + w * 0.43, y + h * 0.45, 3, h * 0.55);
+        g.fillStyle = "rgba(241,244,234,0.86)";
+        [[201,190,173,229,202,215,226,230],[648,161,604,216,642,202,665,221],[805,205,780,237,807,226,830,241]].forEach(p => {
+          g.beginPath();
+          g.moveTo(p[2], p[3]);
+          g.lineTo(p[0], p[1]);
+          g.lineTo(p[6], p[7]);
+          g.lineTo(p[4], p[5]);
+          g.closePath();
+          g.fill();
         });
 
-        ctx.fillStyle = "#d7c596";
-        ctx.fillRect(628, 316, 9, 25);
-        ctx.fillStyle = "#6e3f31";
-        ctx.beginPath();
-        ctx.moveTo(624, 316);
-        ctx.lineTo(632.5, 303);
-        ctx.lineTo(641, 316);
-        ctx.closePath();
-        ctx.fill();
+        drawMountainRange(g, [
+          [0,338],[88,286],[172,329],[263,273],[354,334],[455,278],[555,334],
+          [657,268],[747,333],[842,286],[960,333]
+        ], "rgba(89,119,119,0.68)", 396);
+
+        g.fillStyle = "rgba(183,202,192,0.24)";
+        g.fillRect(0, 285, WORLD.width, 108);
       }
 
-      function drawTreeLine() {
-        const trees = [
-          [286, 349, 13], [309, 356, 10], [334, 346, 15],
-          [703, 347, 13], [731, 340, 16], [756, 351, 11]
-        ];
-
-        trees.forEach(([x, y, size]) => {
-          ctx.fillStyle = "#4e6749";
-          ctx.beginPath();
-          ctx.arc(x, y - size * 0.55, size * 0.62, 0, Math.PI * 2);
-          ctx.arc(x - size * 0.42, y - size * 0.28, size * 0.48, 0, Math.PI * 2);
-          ctx.arc(x + size * 0.42, y - size * 0.28, size * 0.48, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.fillStyle = "#574630";
-          ctx.fillRect(x - 1.5, y - 4, 3, 8);
-        });
-      }
-
-      function drawTerrain() {
-        const ground = ctx.createLinearGradient(0, 330, 0, 540);
-        ground.addColorStop(0, "#547f45");
-        ground.addColorStop(0.36, "#3d673a");
-        ground.addColorStop(1, "#213d2b");
-        ctx.fillStyle = ground;
-        ctx.beginPath();
-        ctx.moveTo(0, terrainY(0));
-        for (let x = 0; x <= WORLD.width; x += 5) {
-          ctx.lineTo(x, terrainY(x));
+      function drawForestBand(g) {
+        const rand = seededRandom(17);
+        for (let i = 0; i < 95; i += 1) {
+          const x = i * 11 - 8;
+          const base = 341 + Math.sin(i * 0.52) * 7 + rand() * 9;
+          const h = 17 + rand() * 19;
+          const shade = i % 3 === 0 ? "#526f55" : i % 3 === 1 ? "#49654d" : "#5c795d";
+          g.fillStyle = shade;
+          g.beginPath();
+          g.moveTo(x, base);
+          g.lineTo(x + 6, base - h);
+          g.lineTo(x + 12, base);
+          g.closePath();
+          g.fill();
         }
-        ctx.lineTo(WORLD.width, WORLD.height);
-        ctx.lineTo(0, WORLD.height);
-        ctx.closePath();
-        ctx.fill();
+      }
 
-        ctx.strokeStyle = "#8daf61";
-        ctx.lineWidth = 4;
-        ctx.beginPath();
-        for (let x = 0; x <= WORLD.width; x += 5) {
+      function drawField(g, points, fill, stroke = "rgba(74,92,58,0.25)") {
+        g.fillStyle = fill;
+        g.strokeStyle = stroke;
+        g.lineWidth = 1;
+        g.beginPath();
+        g.moveTo(points[0][0], points[0][1]);
+        points.slice(1).forEach(([x, y]) => g.lineTo(x, y));
+        g.closePath();
+        g.fill();
+        g.stroke();
+      }
+
+      function drawRiver(g) {
+        g.save();
+        g.beginPath();
+        g.moveTo(470, 352);
+        g.bezierCurveTo(498, 366, 536, 371, 527, 391);
+        g.bezierCurveTo(516, 414, 566, 430, 640, 452);
+        g.lineTo(583, 463);
+        g.bezierCurveTo(518, 436, 482, 416, 493, 393);
+        g.bezierCurveTo(503, 375, 465, 367, 423, 358);
+        g.closePath();
+        g.clip();
+
+        const water = g.createLinearGradient(430, 350, 620, 458);
+        water.addColorStop(0, "#739ca5");
+        water.addColorStop(0.5, "#83aeb4");
+        water.addColorStop(1, "#527f89");
+        g.fillStyle = water;
+        g.fillRect(410, 345, 250, 125);
+
+        g.strokeStyle = "rgba(239,239,211,0.42)";
+        g.lineWidth = 1.4;
+        [[456,365,505,377],[500,395,552,409],[540,429,608,448]].forEach(([x1,y1,x2,y2]) => {
+          g.beginPath();
+          g.moveTo(x1,y1);
+          g.quadraticCurveTo((x1+x2)/2, y1-3, x2,y2);
+          g.stroke();
+        });
+        g.restore();
+      }
+
+      function drawStoneBridge(g) {
+        g.save();
+        g.translate(511, 386);
+        g.fillStyle = "#9b8d70";
+        g.strokeStyle = "#6f6654";
+        g.lineWidth = 1.5;
+        g.beginPath();
+        g.moveTo(-36, 2);
+        g.quadraticCurveTo(0, -13, 38, 0);
+        g.lineTo(38, 10);
+        g.quadraticCurveTo(0, -1, -36, 12);
+        g.closePath();
+        g.fill();
+        g.stroke();
+
+        g.fillStyle = "#6d7f79";
+        [-20, 4, 27].forEach((x, i) => {
+          g.beginPath();
+          g.arc(x, 8 + (i === 1 ? -2 : 0), 8, Math.PI, 0);
+          g.lineTo(x + 8, 15);
+          g.lineTo(x - 8, 15);
+          g.closePath();
+          g.fill();
+        });
+        g.restore();
+      }
+
+      function drawHouse(g, x, y, scale, wall, roof) {
+        g.save();
+        g.translate(x, y);
+        g.scale(scale, scale);
+        g.fillStyle = "rgba(43,54,42,0.16)";
+        g.fillRect(-1, 2, 24, 14);
+        g.fillStyle = wall;
+        g.fillRect(0, 0, 22, 14);
+        g.fillStyle = roof;
+        g.beginPath();
+        g.moveTo(-3, 1);
+        g.lineTo(11, -10);
+        g.lineTo(25, 1);
+        g.closePath();
+        g.fill();
+        g.fillStyle = "rgba(69,62,48,0.7)";
+        g.fillRect(9, 7, 4, 7);
+        g.fillStyle = "rgba(218,201,136,0.75)";
+        g.fillRect(3, 4, 3, 3);
+        g.fillRect(16, 4, 3, 3);
+        g.restore();
+      }
+
+      function drawVillage(g) {
+        const homes = [
+          [333,345,.72,"#d2c291","#77503a"],[357,338,.85,"#d8c79c","#6c4635"],
+          [386,350,.68,"#c7b486","#724536"],[414,342,.78,"#d7c79d","#80503a"],
+          [611,341,.76,"#d1c092","#704335"],[639,334,.88,"#d8c89d","#784b38"],
+          [672,348,.66,"#cbb88c","#6f4235"],[697,340,.74,"#d4c395","#7c4b38"]
+        ];
+        homes.forEach(args => drawHouse(g, ...args));
+
+        g.fillStyle = "#d8c79d";
+        g.fillRect(574, 322, 13, 28);
+        g.fillStyle = "#76503c";
+        g.beginPath();
+        g.moveTo(570, 322);
+        g.lineTo(580.5, 306);
+        g.lineTo(591, 322);
+        g.closePath();
+        g.fill();
+        g.fillStyle = "#6a5944";
+        g.fillRect(579, 297, 3, 11);
+        g.strokeStyle = "#6a5944";
+        g.lineWidth = 1;
+        g.beginPath();
+        g.moveTo(580.5, 294);
+        g.lineTo(580.5, 302);
+        g.moveTo(577, 297);
+        g.lineTo(584, 297);
+        g.stroke();
+
+        g.strokeStyle = "rgba(213,219,203,0.48)";
+        g.lineWidth = 3;
+        g.beginPath();
+        g.moveTo(645, 326);
+        g.bezierCurveTo(638, 315, 651, 310, 644, 299);
+        g.stroke();
+      }
+
+      function drawMidground(g) {
+        const meadow = g.createLinearGradient(0, 305, 0, 460);
+        meadow.addColorStop(0, "#91a96d");
+        meadow.addColorStop(1, "#607b50");
+        g.fillStyle = meadow;
+        g.beginPath();
+        g.moveTo(0, 332);
+        g.quadraticCurveTo(160, 294, 315, 348);
+        g.quadraticCurveTo(470, 398, 632, 338);
+        g.quadraticCurveTo(801, 290, 960, 342);
+        g.lineTo(960, 470);
+        g.lineTo(0, 470);
+        g.closePath();
+        g.fill();
+
+        drawField(g, [[32,348],[214,319],[304,356],[204,388],[45,378]], "#9caf70");
+        drawField(g, [[226,320],[390,345],[438,383],[306,393],[205,365]], "#c1b875");
+        drawField(g, [[626,341],[783,314],[926,348],[861,384],[704,376]], "#a3a66d");
+        drawField(g, [[684,377],[856,382],[925,410],[755,431]], "#7e985e");
+
+        g.strokeStyle = "rgba(104,92,58,0.34)";
+        g.lineWidth = 1;
+        for (let i = 0; i < 7; i += 1) {
+          g.beginPath();
+          g.moveTo(230 + i * 24, 329 + i * 5);
+          g.lineTo(294 + i * 14, 391);
+          g.stroke();
+        }
+
+        drawRiver(g);
+        drawStoneBridge(g);
+        drawVillage(g);
+
+        const orchardXs = [258,278,298,746,766,786,806];
+        orchardXs.forEach((x, i) => {
+          const y = 361 + (i % 2) * 5;
+          g.fillStyle = "#4f6845";
+          g.beginPath();
+          g.arc(x, y - 6, 6, 0, Math.PI * 2);
+          g.fill();
+          g.fillStyle = "#5b4b34";
+          g.fillRect(x - 1, y - 2, 2, 6);
+        });
+      }
+
+      function drawForegroundTerrain(g) {
+        const ground = g.createLinearGradient(0, 330, 0, 540);
+        ground.addColorStop(0, "#547b43");
+        ground.addColorStop(0.34, "#3c6537");
+        ground.addColorStop(1, "#203b29");
+        g.fillStyle = ground;
+        g.beginPath();
+        g.moveTo(0, terrainY(0));
+        for (let x = 0; x <= WORLD.width; x += 4) g.lineTo(x, terrainY(x));
+        g.lineTo(WORLD.width, WORLD.height);
+        g.lineTo(0, WORLD.height);
+        g.closePath();
+        g.fill();
+
+        g.strokeStyle = "#90ad60";
+        g.lineWidth = 4;
+        g.beginPath();
+        for (let x = 0; x <= WORLD.width; x += 4) {
           const y = terrainY(x);
-          if (x === 0) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
+          if (x === 0) g.moveTo(x, y);
+          else g.lineTo(x, y);
         }
-        ctx.stroke();
+        g.stroke();
 
-        drawForegroundDetails();
+        const rand = seededRandom(73);
+        for (let i = 0; i < 130; i += 1) {
+          const x = rand() * WORLD.width;
+          const y = terrainY(x) + 9 + rand() * Math.max(8, WORLD.height - terrainY(x) - 12);
+          const alpha = 0.09 + rand() * 0.13;
+          g.fillStyle = `rgba(192,168,103,${alpha})`;
+          g.beginPath();
+          g.ellipse(x, y, 1 + rand() * 3, 0.6 + rand() * 1.6, rand() * Math.PI, 0, Math.PI * 2);
+          g.fill();
+        }
+
+        g.fillStyle = "rgba(83,62,39,0.42)";
+        g.beginPath();
+        g.ellipse(108, terrainY(108) + 2, 54, 10, -0.04, 0, Math.PI * 2);
+        g.ellipse(852, terrainY(852) + 2, 54, 10, 0.04, 0, Math.PI * 2);
+        g.fill();
+
+        g.strokeStyle = "rgba(169,192,100,0.8)";
+        g.lineWidth = 1.4;
+        [38,173,225,285,680,734,794,925].forEach((x, i) => {
+          const y = terrainY(x) + 4 + (i % 2) * 2;
+          g.beginPath();
+          g.moveTo(x, y);
+          g.lineTo(x - 5, y - 11);
+          g.moveTo(x, y);
+          g.lineTo(x + 1, y - 15);
+          g.moveTo(x, y);
+          g.lineTo(x + 6, y - 9);
+          g.stroke();
+        });
+
+        g.fillStyle = "rgba(46,54,43,0.55)";
+        [[190,7],[746,8],[906,6],[262,5]].forEach(([x,r]) => {
+          g.beginPath();
+          g.ellipse(x, terrainY(x) - 1, r * 1.5, r, -0.18, 0, Math.PI * 2);
+          g.fill();
+        });
+
+        g.strokeStyle = "#6b5135";
+        g.lineWidth = 3;
+        [300,324,348].forEach((x, i) => {
+          const y = terrainY(x) - 1;
+          g.beginPath();
+          g.moveTo(x, y);
+          g.lineTo(x - 1, y - 18 - i * 2);
+          g.stroke();
+        });
+        g.strokeStyle = "#8c724d";
+        g.lineWidth = 2;
+        g.beginPath();
+        g.moveTo(297, terrainY(300) - 13);
+        g.lineTo(352, terrainY(348) - 18);
+        g.stroke();
       }
 
-      function drawForegroundDetails() {
-        ctx.strokeStyle = "rgba(156,190,98,0.75)";
-        ctx.lineWidth = 1.4;
-        const grassTufts = [48, 172, 236, 704, 785, 916];
-        grassTufts.forEach((x, index) => {
-          const y = terrainY(x) + 4 + (index % 2) * 2;
-          ctx.beginPath();
-          ctx.moveTo(x, y);
-          ctx.lineTo(x - 5, y - 11);
-          ctx.moveTo(x, y);
-          ctx.lineTo(x + 1, y - 14);
-          ctx.moveTo(x, y);
-          ctx.lineTo(x + 6, y - 9);
-          ctx.stroke();
-        });
-
-        ctx.fillStyle = "rgba(46,57,45,0.38)";
-        [[190, 6], [744, 7], [905, 5]].forEach(([x, r]) => {
-          ctx.beginPath();
-          ctx.ellipse(x, terrainY(x) - 1, r * 1.5, r, -0.18, 0, Math.PI * 2);
-          ctx.fill();
-        });
+      function renderBackdrop() {
+        drawSky(bg);
+        drawMountains(bg);
+        drawForestBand(bg);
+        drawMidground(bg);
+        drawForegroundTerrain(bg);
       }
 
       function drawWheel(x, y, radius, colors) {
@@ -762,7 +898,7 @@
         if (!p) return;
 
         if (p.trail.length > 1) {
-          ctx.strokeStyle = "rgba(70, 68, 62, 0.35)";
+          ctx.strokeStyle = "rgba(70,68,62,0.35)";
           ctx.lineWidth = 3;
           ctx.beginPath();
           p.trail.forEach((point, index) => {
@@ -779,10 +915,7 @@
       }
 
       function draw() {
-        drawSky();
-        drawMountains();
-        drawPastoralValley();
-        drawTerrain();
+        ctx.drawImage(backdrop, 0, 0);
         drawCannon("player");
         drawCannon("cpu");
         drawProjectile();
@@ -822,6 +955,7 @@
         fire("player", Number(angleInput.value), Number(powerInput.value));
       });
 
+      renderBackdrop();
       newRound();
       window.requestAnimationFrame(frame);
     })();
