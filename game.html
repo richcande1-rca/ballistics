@@ -1,0 +1,1197 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#172033">
+  <title>Ballistics</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --panel: #172033;
+      --text: #f5f7fb;
+      --muted: #b9c2d3;
+      --accent: #f1b84b;
+      --border: rgba(255, 255, 255, 0.14);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background: #0e1422;
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body {
+      display: grid;
+      place-items: center;
+      padding: 16px;
+    }
+
+    .game-shell {
+      width: min(100%, 1000px);
+      display: grid;
+      gap: 12px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 0 4px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.35rem, 4vw, 2rem);
+      letter-spacing: 0.16em;
+    }
+
+    .stage-label {
+      color: var(--muted);
+      font-size: 0.95rem;
+      text-align: right;
+    }
+
+    .canvas-wrap {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: #8fc8ec;
+      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 16 / 9;
+      touch-action: none;
+    }
+
+    .status {
+      position: absolute;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: max-content;
+      max-width: calc(100% - 24px);
+      padding: 8px 13px;
+      border-radius: 999px;
+      background: rgba(12, 18, 30, 0.78);
+      color: #fff;
+      text-align: center;
+      font-weight: 700;
+      backdrop-filter: blur(6px);
+      pointer-events: none;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
+      gap: 12px;
+      align-items: end;
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: var(--panel);
+    }
+
+    .control {
+      display: grid;
+      gap: 7px;
+      min-width: 0;
+    }
+
+    .control-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    output {
+      color: var(--text);
+      font-weight: 800;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    button {
+      min-height: 50px;
+      border: 0;
+      border-radius: 12px;
+      padding: 0 24px;
+      background: var(--accent);
+      color: #241707;
+      font: inherit;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+    }
+
+    button:hover:not(:disabled) { filter: brightness(1.08); }
+    button:active:not(:disabled) { transform: translateY(1px); }
+    button:disabled { cursor: not-allowed; opacity: 0.45; }
+
+    .readout {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 0 4px;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .wind {
+      color: var(--text);
+      font-weight: 800;
+    }
+
+    @media (max-width: 680px) {
+      body { padding: 8px; }
+      .controls { grid-template-columns: 1fr 1fr; }
+      button { grid-column: 1 / -1; width: 100%; }
+      .readout { font-size: 0.84rem; }
+    }
+  </style>
+</head>
+<body>
+  <main class="game-shell" aria-label="Ballistics artillery game">
+    <div class="topbar">
+      <h1>BALLISTICS</h1>
+      <div class="stage-label">Stage 1 · Open Hills</div>
+    </div>
+
+    <section class="canvas-wrap">
+      <canvas id="game" width="960" height="540" aria-label="Two cannons facing each other across a valley"></canvas>
+      <div id="status" class="status" aria-live="polite">Your turn</div>
+    </section>
+
+    <section class="controls" aria-label="Cannon controls">
+      <label class="control" for="angle">
+        <span class="control-head"><span>ANGLE</span><output id="angleValue">45°</output></span>
+        <input id="angle" type="range" min="10" max="80" value="45" step="1">
+      </label>
+
+      <label class="control" for="power">
+        <span class="control-head"><span>POWER</span><output id="powerValue">70</output></span>
+        <input id="power" type="range" min="30" max="100" value="70" step="1">
+      </label>
+
+      <button id="fire" type="button">FIRE</button>
+    </section>
+
+    <div class="readout">
+      <span id="wind" class="wind">Wind: calm</span>
+      <span>Destroy the enemy cannon.</span>
+    </div>
+  </main>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const canvas = document.getElementById("game");
+      const ctx = canvas.getContext("2d");
+      const angleInput = document.getElementById("angle");
+      const powerInput = document.getElementById("power");
+      const angleValue = document.getElementById("angleValue");
+      const powerValue = document.getElementById("powerValue");
+      const fireButton = document.getElementById("fire");
+      const statusEl = document.getElementById("status");
+      const windEl = document.getElementById("wind");
+
+      const WORLD = {
+        width: 960,
+        height: 540,
+        gravity: 170,
+        speedScale: 3.6
+      };
+
+      const cannons = {
+        player: {
+          x: 108,
+          barrel: "#303940",
+          barrelLight: "#667078",
+          wood: "#7a4b27",
+          woodLight: "#b0783e"
+        },
+        cpu: {
+          x: 852,
+          barrel: "#572d2a",
+          barrelLight: "#9b5950",
+          wood: "#684323",
+          woodLight: "#a9753d"
+        }
+      };
+
+      const state = {
+        turn: "player",
+        projectile: null,
+        winner: null,
+        wind: 0,
+        lastTime: 0,
+        cpuTimer: null,
+        transitionTimer: null,
+        cpuAngle: 45,
+        particles: [],
+        flashes: [],
+        recoil: { player: 0, cpu: 0 },
+        shake: 0
+      };
+
+      const backdrop = document.createElement("canvas");
+      backdrop.width = WORLD.width;
+      backdrop.height = WORLD.height;
+      const bg = backdrop.getContext("2d");
+
+      function terrainY(x) {
+        const leftHill = 78 * Math.exp(-Math.pow((x - 105) / 185, 2));
+        const rightHill = 78 * Math.exp(-Math.pow((x - 855) / 185, 2));
+        const valley = 18 * Math.exp(-Math.pow((x - 480) / 240, 2));
+        return 430 - leftHill - rightHill + valley;
+      }
+
+      function cannonPosition(side) {
+        const cannon = cannons[side];
+        return { x: cannon.x, y: terrainY(cannon.x) - 15 };
+      }
+
+      function randomWind() {
+        const raw = Math.round((Math.random() * 16 - 8) * 2) / 2;
+        return Math.abs(raw) < 1 ? 0 : raw;
+      }
+
+      function setWind(value) {
+        state.wind = value;
+        if (value === 0) {
+          windEl.textContent = "Wind: calm";
+          return;
+        }
+        const arrow = value > 0 ? "→" : "←";
+        windEl.textContent = `Wind: ${arrow} ${Math.abs(value).toFixed(1)}`;
+      }
+
+      function setStatus(message) {
+        statusEl.textContent = message;
+      }
+
+      function setControlsEnabled(enabled) {
+        angleInput.disabled = !enabled;
+        powerInput.disabled = !enabled;
+        fireButton.disabled = !enabled;
+      }
+
+      function updateReadouts() {
+        angleValue.textContent = `${angleInput.value}°`;
+        powerValue.textContent = powerInput.value;
+      }
+
+      function barrelTip(side, angleDegrees) {
+        const pos = cannonPosition(side);
+        const direction = side === "player" ? 1 : -1;
+        const radians = angleDegrees * Math.PI / 180;
+        return {
+          x: pos.x + Math.cos(radians) * 48 * direction,
+          y: pos.y - 15 - Math.sin(radians) * 48
+        };
+      }
+
+      function addParticle(particle) {
+        state.particles.push({
+          gravity: 0,
+          drag: 0.985,
+          rotation: 0,
+          spin: 0,
+          ...particle,
+          maxLife: particle.life
+        });
+      }
+
+      function createMuzzleEffect(side, angleDegrees) {
+        const origin = barrelTip(side, angleDegrees);
+        const direction = side === "player" ? 1 : -1;
+        const radians = angleDegrees * Math.PI / 180;
+        const shotAngle = side === "player" ? -radians : Math.PI + radians;
+
+        state.flashes.push({
+          x: origin.x,
+          y: origin.y,
+          angle: shotAngle,
+          life: 0.12,
+          maxLife: 0.12,
+          radius: 30
+        });
+
+        for (let i = 0; i < 10; i += 1) {
+          const spread = (Math.random() - 0.5) * 0.9;
+          const speed = 35 + Math.random() * 65;
+          addParticle({
+            kind: "smoke",
+            x: origin.x,
+            y: origin.y,
+            vx: Math.cos(shotAngle + spread) * speed * 0.55 + direction * 10,
+            vy: Math.sin(shotAngle + spread) * speed * 0.55 - 16,
+            radius: 7 + Math.random() * 7,
+            life: 0.65 + Math.random() * 0.5,
+            drag: 0.975,
+            color: "92, 91, 84"
+          });
+        }
+
+        for (let i = 0; i < 7; i += 1) {
+          const spread = (Math.random() - 0.5) * 0.55;
+          const speed = 90 + Math.random() * 130;
+          addParticle({
+            kind: "spark",
+            x: origin.x,
+            y: origin.y,
+            vx: Math.cos(shotAngle + spread) * speed,
+            vy: Math.sin(shotAngle + spread) * speed,
+            radius: 1.2 + Math.random() * 1.4,
+            life: 0.18 + Math.random() * 0.16,
+            gravity: 100,
+            drag: 0.99,
+            color: "255, 210, 92"
+          });
+        }
+
+        state.recoil[side] = 1;
+        state.shake = Math.max(state.shake, 3.5);
+      }
+
+      function createGroundImpact(x, y) {
+        state.flashes.push({
+          x,
+          y,
+          angle: 0,
+          life: 0.13,
+          maxLife: 0.13,
+          radius: 24
+        });
+
+        for (let i = 0; i < 18; i += 1) {
+          const angle = Math.PI + Math.random() * Math.PI;
+          const speed = 55 + Math.random() * 155;
+          addParticle({
+            kind: "dirt",
+            x,
+            y: y - 2,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            radius: 2 + Math.random() * 3.5,
+            life: 0.55 + Math.random() * 0.45,
+            gravity: 270,
+            drag: 0.992,
+            rotation: Math.random() * Math.PI,
+            spin: (Math.random() - 0.5) * 9,
+            color: Math.random() > 0.45 ? "116, 82, 48" : "77, 62, 42"
+          });
+        }
+
+        for (let i = 0; i < 12; i += 1) {
+          const angle = Math.PI + Math.random() * Math.PI;
+          const speed = 18 + Math.random() * 55;
+          addParticle({
+            kind: "smoke",
+            x,
+            y: y - 5,
+            vx: Math.cos(angle) * speed * 0.65,
+            vy: Math.sin(angle) * speed - 22,
+            radius: 9 + Math.random() * 10,
+            life: 0.9 + Math.random() * 0.7,
+            drag: 0.978,
+            color: "79, 72, 59"
+          });
+        }
+
+        state.shake = Math.max(state.shake, 8);
+      }
+
+      function createDirectHit(side) {
+        const target = cannonPosition(side);
+        const x = target.x;
+        const y = target.y - 9;
+
+        state.flashes.push({
+          x,
+          y,
+          angle: 0,
+          life: 0.22,
+          maxLife: 0.22,
+          radius: 54
+        });
+
+        for (let i = 0; i < 28; i += 1) {
+          const angle = Math.random() * Math.PI * 2;
+          const speed = 75 + Math.random() * 210;
+          const fiery = i < 12;
+          addParticle({
+            kind: fiery ? "spark" : "debris",
+            x,
+            y,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed - 30,
+            radius: fiery ? 1.5 + Math.random() * 2 : 2.5 + Math.random() * 4,
+            life: fiery ? 0.35 + Math.random() * 0.35 : 0.65 + Math.random() * 0.55,
+            gravity: fiery ? 170 : 280,
+            drag: 0.99,
+            rotation: Math.random() * Math.PI,
+            spin: (Math.random() - 0.5) * 12,
+            color: fiery
+              ? (Math.random() > 0.45 ? "255, 185, 57" : "255, 104, 41")
+              : (Math.random() > 0.5 ? "58, 54, 47" : "103, 65, 35")
+          });
+        }
+
+        for (let i = 0; i < 20; i += 1) {
+          const angle = Math.random() * Math.PI * 2;
+          const speed = 25 + Math.random() * 75;
+          addParticle({
+            kind: "smoke",
+            x,
+            y,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed - 35,
+            radius: 10 + Math.random() * 14,
+            life: 1.1 + Math.random() * 1.1,
+            drag: 0.979,
+            color: "52, 52, 49"
+          });
+        }
+
+        state.shake = 15;
+      }
+
+      function fire(side, angleDegrees, power) {
+        if (state.projectile || state.winner || state.transitionTimer) return;
+
+        const origin = barrelTip(side, angleDegrees);
+        const direction = side === "player" ? 1 : -1;
+        const radians = angleDegrees * Math.PI / 180;
+        const speed = power * WORLD.speedScale;
+
+        createMuzzleEffect(side, angleDegrees);
+
+        state.projectile = {
+          owner: side,
+          x: origin.x,
+          y: origin.y,
+          vx: Math.cos(radians) * speed * direction,
+          vy: -Math.sin(radians) * speed,
+          trail: []
+        };
+
+        setControlsEnabled(false);
+        setStatus(side === "player" ? "Shot away…" : "Enemy fires…");
+      }
+
+      function targetHit(projectile) {
+        const targetSide = projectile.owner === "player" ? "cpu" : "player";
+        const target = cannonPosition(targetSide);
+        const dx = projectile.x - target.x;
+        const dy = projectile.y - (target.y - 8);
+        return Math.hypot(dx, dy) <= 27;
+      }
+
+      function continueAfterImpact(message, delay = 650) {
+        state.projectile = null;
+        setStatus(message);
+
+        state.transitionTimer = window.setTimeout(() => {
+          state.transitionTimer = null;
+          if (state.winner) return;
+
+          if (state.turn === "player") {
+            state.turn = "cpu";
+            setStatus("Enemy is aiming…");
+            state.cpuTimer = window.setTimeout(cpuTurn, 850);
+          } else {
+            state.turn = "player";
+            setStatus("Your turn");
+            setControlsEnabled(true);
+          }
+        }, delay);
+      }
+
+      function endRound(winner) {
+        const targetSide = winner === "player" ? "cpu" : "player";
+        state.winner = winner;
+        state.projectile = null;
+        createDirectHit(targetSide);
+        setControlsEnabled(false);
+        setStatus(winner === "player" ? "Direct hit — you win!" : "Direct hit — CPU wins");
+
+        state.transitionTimer = window.setTimeout(() => {
+          state.transitionTimer = null;
+          fireButton.disabled = false;
+          fireButton.textContent = "NEW ROUND";
+        }, 900);
+      }
+
+      function cpuTurn() {
+        state.cpuTimer = null;
+        if (state.winner) return;
+
+        const cpu = cannonPosition("cpu");
+        const player = cannonPosition("player");
+        const distance = Math.abs(cpu.x - player.x);
+        const angle = 38 + Math.random() * 18;
+        const radians = angle * Math.PI / 180;
+        const idealSpeed = Math.sqrt((distance * WORLD.gravity) / Math.max(0.2, Math.sin(2 * radians)));
+        const windCorrection = state.wind * 0.7;
+        const error = 0.93 + Math.random() * 0.14;
+        const power = Math.max(30, Math.min(100, ((idealSpeed + windCorrection) / WORLD.speedScale) * error));
+
+        state.cpuAngle = angle;
+        fire("cpu", angle, power);
+      }
+
+      function updateProjectile(dt) {
+        const p = state.projectile;
+        if (!p) return;
+
+        p.vx += state.wind * 4 * dt;
+        p.vy += WORLD.gravity * dt;
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+
+        p.trail.push({ x: p.x, y: p.y });
+        if (p.trail.length > 30) p.trail.shift();
+
+        if (targetHit(p)) {
+          endRound(p.owner);
+          return;
+        }
+
+        const outOfBounds = p.x < -30 || p.x > WORLD.width + 30 || p.y > WORLD.height + 30;
+        const hitGround = p.x >= 0 && p.x <= WORLD.width && p.y >= terrainY(p.x);
+
+        if (outOfBounds) {
+          continueAfterImpact("Long shot…", 480);
+        } else if (hitGround) {
+          createGroundImpact(p.x, terrainY(p.x));
+          continueAfterImpact("Impact.", 720);
+        }
+      }
+
+      function updateEffects(dt) {
+        state.recoil.player = Math.max(0, state.recoil.player - dt * 6.5);
+        state.recoil.cpu = Math.max(0, state.recoil.cpu - dt * 6.5);
+        state.shake = Math.max(0, state.shake - dt * 25);
+
+        state.flashes.forEach(flash => { flash.life -= dt; });
+        state.flashes = state.flashes.filter(flash => flash.life > 0);
+
+        state.particles.forEach(p => {
+          p.life -= dt;
+          p.vx *= Math.pow(p.drag, dt * 60);
+          p.vy *= Math.pow(p.drag, dt * 60);
+          p.vy += p.gravity * dt;
+          p.x += p.vx * dt;
+          p.y += p.vy * dt;
+          p.rotation += p.spin * dt;
+          if (p.kind === "smoke") p.radius += dt * 12;
+        });
+        state.particles = state.particles.filter(p => p.life > 0);
+      }
+
+      function seededRandom(seed) {
+        let value = seed >>> 0;
+        return () => {
+          value += 0x6D2B79F5;
+          let t = value;
+          t = Math.imul(t ^ (t >>> 15), t | 1);
+          t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+          return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
+      }
+
+      function drawCloud(g, x, y, scale, opacity) {
+        g.save();
+        g.translate(x, y);
+        g.scale(scale, scale);
+
+        g.fillStyle = `rgba(91,119,137,${opacity * 0.18})`;
+        g.beginPath();
+        g.ellipse(5, 18, 56, 13, 0, 0, Math.PI * 2);
+        g.fill();
+
+        g.fillStyle = `rgba(255,251,233,${opacity})`;
+        g.beginPath();
+        g.arc(-34, 7, 18, 0, Math.PI * 2);
+        g.arc(-12, -3, 27, 0, Math.PI * 2);
+        g.arc(17, 3, 23, 0, Math.PI * 2);
+        g.arc(39, 10, 15, 0, Math.PI * 2);
+        g.rect(-34, 7, 73, 21);
+        g.fill();
+        g.restore();
+      }
+
+      function drawSky(g) {
+        const sky = g.createLinearGradient(0, 0, 0, 380);
+        sky.addColorStop(0, "#5b91be");
+        sky.addColorStop(0.48, "#a8c9d7");
+        sky.addColorStop(0.78, "#e7d3a8");
+        sky.addColorStop(1, "#d8bd82");
+        g.fillStyle = sky;
+        g.fillRect(0, 0, WORLD.width, WORLD.height);
+
+        const glow = g.createRadialGradient(760, 92, 6, 760, 92, 112);
+        glow.addColorStop(0, "rgba(255,250,213,0.96)");
+        glow.addColorStop(0.22, "rgba(255,232,164,0.48)");
+        glow.addColorStop(1, "rgba(255,232,164,0)");
+        g.fillStyle = glow;
+        g.fillRect(630, 0, 260, 225);
+
+        g.fillStyle = "rgba(255,247,210,0.93)";
+        g.beginPath();
+        g.arc(760, 92, 24, 0, Math.PI * 2);
+        g.fill();
+
+        drawCloud(g, 164, 92, 0.95, 0.7);
+        drawCloud(g, 475, 118, 0.72, 0.5);
+        drawCloud(g, 868, 165, 0.62, 0.42);
+
+        g.strokeStyle = "rgba(47,70,78,0.55)";
+        g.lineWidth = 1.5;
+        g.lineCap = "round";
+        [[322,112,7],[346,126,5],[604,81,6],[628,95,4]].forEach(([x,y,s]) => {
+          g.beginPath();
+          g.arc(x - s / 2, y, s / 2, Math.PI * 1.08, Math.PI * 1.92);
+          g.arc(x + s / 2, y, s / 2, Math.PI * 1.08, Math.PI * 1.92);
+          g.stroke();
+        });
+      }
+
+      function drawMountainRange(g, points, fill, baseY) {
+        g.fillStyle = fill;
+        g.beginPath();
+        g.moveTo(0, baseY);
+        points.forEach(([x, y]) => g.lineTo(x, y));
+        g.lineTo(WORLD.width, baseY);
+        g.closePath();
+        g.fill();
+      }
+
+      function drawMountains(g) {
+        drawMountainRange(g, [
+          [0,290],[72,226],[126,272],[201,190],[263,260],[339,218],[405,276],
+          [492,195],[568,274],[648,161],[723,265],[805,205],[882,278],[960,220]
+        ], "#aabcc0", 356);
+
+        g.fillStyle = "rgba(241,244,234,0.86)";
+        [[201,190,173,229,202,215,226,230],[648,161,604,216,642,202,665,221],[805,205,780,237,807,226,830,241]].forEach(p => {
+          g.beginPath();
+          g.moveTo(p[2], p[3]);
+          g.lineTo(p[0], p[1]);
+          g.lineTo(p[6], p[7]);
+          g.lineTo(p[4], p[5]);
+          g.closePath();
+          g.fill();
+        });
+
+        drawMountainRange(g, [
+          [0,338],[88,286],[172,329],[263,273],[354,334],[455,278],[555,334],
+          [657,268],[747,333],[842,286],[960,333]
+        ], "rgba(89,119,119,0.68)", 396);
+
+        g.fillStyle = "rgba(183,202,192,0.24)";
+        g.fillRect(0, 285, WORLD.width, 108);
+      }
+
+      function drawForestBand(g) {
+        const rand = seededRandom(17);
+        for (let i = 0; i < 95; i += 1) {
+          const x = i * 11 - 8;
+          const base = 341 + Math.sin(i * 0.52) * 7 + rand() * 9;
+          const h = 17 + rand() * 19;
+          const shade = i % 3 === 0 ? "#526f55" : i % 3 === 1 ? "#49654d" : "#5c795d";
+          g.fillStyle = shade;
+          g.beginPath();
+          g.moveTo(x, base);
+          g.lineTo(x + 6, base - h);
+          g.lineTo(x + 12, base);
+          g.closePath();
+          g.fill();
+        }
+      }
+
+      function drawField(g, points, fill, stroke = "rgba(74,92,58,0.25)") {
+        g.fillStyle = fill;
+        g.strokeStyle = stroke;
+        g.lineWidth = 1;
+        g.beginPath();
+        g.moveTo(points[0][0], points[0][1]);
+        points.slice(1).forEach(([x, y]) => g.lineTo(x, y));
+        g.closePath();
+        g.fill();
+        g.stroke();
+      }
+
+      function drawRiver(g) {
+        g.save();
+        g.beginPath();
+        g.moveTo(470, 352);
+        g.bezierCurveTo(498, 366, 536, 371, 527, 391);
+        g.bezierCurveTo(516, 414, 566, 430, 640, 452);
+        g.lineTo(583, 463);
+        g.bezierCurveTo(518, 436, 482, 416, 493, 393);
+        g.bezierCurveTo(503, 375, 465, 367, 423, 358);
+        g.closePath();
+        g.clip();
+
+        const water = g.createLinearGradient(430, 350, 620, 458);
+        water.addColorStop(0, "#739ca5");
+        water.addColorStop(0.5, "#83aeb4");
+        water.addColorStop(1, "#527f89");
+        g.fillStyle = water;
+        g.fillRect(410, 345, 250, 125);
+
+        g.strokeStyle = "rgba(239,239,211,0.42)";
+        g.lineWidth = 1.4;
+        [[456,365,505,377],[500,395,552,409],[540,429,608,448]].forEach(([x1,y1,x2,y2]) => {
+          g.beginPath();
+          g.moveTo(x1,y1);
+          g.quadraticCurveTo((x1+x2)/2, y1-3, x2,y2);
+          g.stroke();
+        });
+        g.restore();
+      }
+
+      function drawStoneBridge(g) {
+        g.save();
+        g.translate(511, 386);
+        g.fillStyle = "#9b8d70";
+        g.strokeStyle = "#6f6654";
+        g.lineWidth = 1.5;
+        g.beginPath();
+        g.moveTo(-36, 2);
+        g.quadraticCurveTo(0, -13, 38, 0);
+        g.lineTo(38, 10);
+        g.quadraticCurveTo(0, -1, -36, 12);
+        g.closePath();
+        g.fill();
+        g.stroke();
+
+        g.fillStyle = "#6d7f79";
+        [-20, 4, 27].forEach((x, i) => {
+          g.beginPath();
+          g.arc(x, 8 + (i === 1 ? -2 : 0), 8, Math.PI, 0);
+          g.lineTo(x + 8, 15);
+          g.lineTo(x - 8, 15);
+          g.closePath();
+          g.fill();
+        });
+        g.restore();
+      }
+
+      function drawHouse(g, x, y, scale, wall, roof) {
+        g.save();
+        g.translate(x, y);
+        g.scale(scale, scale);
+        g.fillStyle = "rgba(43,54,42,0.16)";
+        g.fillRect(-1, 2, 24, 14);
+        g.fillStyle = wall;
+        g.fillRect(0, 0, 22, 14);
+        g.fillStyle = roof;
+        g.beginPath();
+        g.moveTo(-3, 1);
+        g.lineTo(11, -10);
+        g.lineTo(25, 1);
+        g.closePath();
+        g.fill();
+        g.fillStyle = "rgba(69,62,48,0.7)";
+        g.fillRect(9, 7, 4, 7);
+        g.fillStyle = "rgba(218,201,136,0.75)";
+        g.fillRect(3, 4, 3, 3);
+        g.fillRect(16, 4, 3, 3);
+        g.restore();
+      }
+
+      function drawVillage(g) {
+        const homes = [
+          [333,345,.72,"#d2c291","#77503a"],[357,338,.85,"#d8c79c","#6c4635"],
+          [386,350,.68,"#c7b486","#724536"],[414,342,.78,"#d7c79d","#80503a"],
+          [611,341,.76,"#d1c092","#704335"],[639,334,.88,"#d8c89d","#784b38"],
+          [672,348,.66,"#cbb88c","#6f4235"],[697,340,.74,"#d4c395","#7c4b38"]
+        ];
+        homes.forEach(args => drawHouse(g, ...args));
+
+        g.fillStyle = "#d8c79d";
+        g.fillRect(574, 322, 13, 28);
+        g.fillStyle = "#76503c";
+        g.beginPath();
+        g.moveTo(570, 322);
+        g.lineTo(580.5, 306);
+        g.lineTo(591, 322);
+        g.closePath();
+        g.fill();
+        g.fillStyle = "#6a5944";
+        g.fillRect(579, 297, 3, 11);
+        g.strokeStyle = "#6a5944";
+        g.lineWidth = 1;
+        g.beginPath();
+        g.moveTo(580.5, 294);
+        g.lineTo(580.5, 302);
+        g.moveTo(577, 297);
+        g.lineTo(584, 297);
+        g.stroke();
+
+        g.strokeStyle = "rgba(213,219,203,0.48)";
+        g.lineWidth = 3;
+        g.beginPath();
+        g.moveTo(645, 326);
+        g.bezierCurveTo(638, 315, 651, 310, 644, 299);
+        g.stroke();
+      }
+
+      function drawMidground(g) {
+        const meadow = g.createLinearGradient(0, 305, 0, 460);
+        meadow.addColorStop(0, "#91a96d");
+        meadow.addColorStop(1, "#607b50");
+        g.fillStyle = meadow;
+        g.beginPath();
+        g.moveTo(0, 332);
+        g.quadraticCurveTo(160, 294, 315, 348);
+        g.quadraticCurveTo(470, 398, 632, 338);
+        g.quadraticCurveTo(801, 290, 960, 342);
+        g.lineTo(960, 470);
+        g.lineTo(0, 470);
+        g.closePath();
+        g.fill();
+
+        drawField(g, [[32,348],[214,319],[304,356],[204,388],[45,378]], "#9caf70");
+        drawField(g, [[226,320],[390,345],[438,383],[306,393],[205,365]], "#c1b875");
+        drawField(g, [[626,341],[783,314],[926,348],[861,384],[704,376]], "#a3a66d");
+        drawField(g, [[684,377],[856,382],[925,410],[755,431]], "#7e985e");
+
+        g.strokeStyle = "rgba(104,92,58,0.34)";
+        g.lineWidth = 1;
+        for (let i = 0; i < 7; i += 1) {
+          g.beginPath();
+          g.moveTo(230 + i * 24, 329 + i * 5);
+          g.lineTo(294 + i * 14, 391);
+          g.stroke();
+        }
+
+        drawRiver(g);
+        drawStoneBridge(g);
+        drawVillage(g);
+
+        const orchardXs = [258,278,298,746,766,786,806];
+        orchardXs.forEach((x, i) => {
+          const y = 361 + (i % 2) * 5;
+          g.fillStyle = "#4f6845";
+          g.beginPath();
+          g.arc(x, y - 6, 6, 0, Math.PI * 2);
+          g.fill();
+          g.fillStyle = "#5b4b34";
+          g.fillRect(x - 1, y - 2, 2, 6);
+        });
+      }
+
+      function drawForegroundTerrain(g) {
+        const ground = g.createLinearGradient(0, 330, 0, 540);
+        ground.addColorStop(0, "#547b43");
+        ground.addColorStop(0.34, "#3c6537");
+        ground.addColorStop(1, "#203b29");
+        g.fillStyle = ground;
+        g.beginPath();
+        g.moveTo(0, terrainY(0));
+        for (let x = 0; x <= WORLD.width; x += 4) g.lineTo(x, terrainY(x));
+        g.lineTo(WORLD.width, WORLD.height);
+        g.lineTo(0, WORLD.height);
+        g.closePath();
+        g.fill();
+
+        g.strokeStyle = "#90ad60";
+        g.lineWidth = 4;
+        g.beginPath();
+        for (let x = 0; x <= WORLD.width; x += 4) {
+          const y = terrainY(x);
+          if (x === 0) g.moveTo(x, y);
+          else g.lineTo(x, y);
+        }
+        g.stroke();
+
+        const rand = seededRandom(73);
+        for (let i = 0; i < 130; i += 1) {
+          const x = rand() * WORLD.width;
+          const y = terrainY(x) + 9 + rand() * Math.max(8, WORLD.height - terrainY(x) - 12);
+          const alpha = 0.09 + rand() * 0.13;
+          g.fillStyle = `rgba(192,168,103,${alpha})`;
+          g.beginPath();
+          g.ellipse(x, y, 1 + rand() * 3, 0.6 + rand() * 1.6, rand() * Math.PI, 0, Math.PI * 2);
+          g.fill();
+        }
+
+        g.fillStyle = "rgba(83,62,39,0.42)";
+        g.beginPath();
+        g.ellipse(108, terrainY(108) + 2, 54, 10, -0.04, 0, Math.PI * 2);
+        g.ellipse(852, terrainY(852) + 2, 54, 10, 0.04, 0, Math.PI * 2);
+        g.fill();
+
+        g.strokeStyle = "rgba(169,192,100,0.8)";
+        g.lineWidth = 1.4;
+        [38,173,225,285,680,734,794,925].forEach((x, i) => {
+          const y = terrainY(x) + 4 + (i % 2) * 2;
+          g.beginPath();
+          g.moveTo(x, y);
+          g.lineTo(x - 5, y - 11);
+          g.moveTo(x, y);
+          g.lineTo(x + 1, y - 15);
+          g.moveTo(x, y);
+          g.lineTo(x + 6, y - 9);
+          g.stroke();
+        });
+
+        g.fillStyle = "rgba(46,54,43,0.55)";
+        [[190,7],[746,8],[906,6],[262,5]].forEach(([x,r]) => {
+          g.beginPath();
+          g.ellipse(x, terrainY(x) - 1, r * 1.5, r, -0.18, 0, Math.PI * 2);
+          g.fill();
+        });
+
+        g.strokeStyle = "#6b5135";
+        g.lineWidth = 3;
+        [300,324,348].forEach((x, i) => {
+          const y = terrainY(x) - 1;
+          g.beginPath();
+          g.moveTo(x, y);
+          g.lineTo(x - 1, y - 18 - i * 2);
+          g.stroke();
+        });
+        g.strokeStyle = "#8c724d";
+        g.lineWidth = 2;
+        g.beginPath();
+        g.moveTo(297, terrainY(300) - 13);
+        g.lineTo(352, terrainY(348) - 18);
+        g.stroke();
+      }
+
+      function renderBackdrop() {
+        drawSky(bg);
+        drawMountains(bg);
+        drawForestBand(bg);
+        drawMidground(bg);
+        drawForegroundTerrain(bg);
+      }
+
+      function drawWheel(x, y, radius, colors) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.strokeStyle = colors.wood;
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.arc(0, 0, radius, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.strokeStyle = colors.woodLight;
+        ctx.lineWidth = 2.2;
+        for (let i = 0; i < 10; i += 1) {
+          const angle = i * Math.PI / 5;
+          ctx.beginPath();
+          ctx.moveTo(Math.cos(angle) * 3, Math.sin(angle) * 3);
+          ctx.lineTo(Math.cos(angle) * (radius - 3), Math.sin(angle) * (radius - 3));
+          ctx.stroke();
+        }
+        ctx.fillStyle = colors.barrel;
+        ctx.beginPath();
+        ctx.arc(0, 0, 4.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      function drawCannon(side) {
+        const cannon = cannons[side];
+        const pos = cannonPosition(side);
+        const angle = side === "player" ? Number(angleInput.value) : state.cpuAngle;
+        const direction = side === "player" ? 1 : -1;
+        const radians = angle * Math.PI / 180;
+        const recoil = state.recoil[side] * 8;
+
+        ctx.save();
+        ctx.translate(pos.x - recoil * direction, pos.y);
+        ctx.fillStyle = "rgba(20,28,22,0.35)";
+        ctx.beginPath();
+        ctx.ellipse(-4 * direction, 16, 32, 7, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.scale(direction, 1);
+
+        ctx.fillStyle = cannon.wood;
+        ctx.beginPath();
+        ctx.moveTo(-33, 4);
+        ctx.lineTo(-5, -9);
+        ctx.lineTo(18, -7);
+        ctx.lineTo(13, 5);
+        ctx.lineTo(-28, 10);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = cannon.woodLight;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(-29, 5);
+        ctx.lineTo(13, -3);
+        ctx.stroke();
+        drawWheel(-7, 3, 16, cannon);
+
+        ctx.save();
+        ctx.translate(0, -15);
+        ctx.rotate(-radians);
+        const barrelGradient = ctx.createLinearGradient(0, -7, 0, 7);
+        barrelGradient.addColorStop(0, cannon.barrelLight);
+        barrelGradient.addColorStop(0.4, cannon.barrel);
+        barrelGradient.addColorStop(1, "#1d2326");
+        ctx.fillStyle = barrelGradient;
+        ctx.beginPath();
+        ctx.moveTo(-12, -7);
+        ctx.lineTo(38, -4.8);
+        ctx.lineTo(48, -5.8);
+        ctx.lineTo(48, 5.8);
+        ctx.lineTo(38, 4.8);
+        ctx.lineTo(-12, 7);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = cannon.barrel;
+        ctx.fillRect(38, -7.4, 10, 14.8);
+        ctx.restore();
+        ctx.restore();
+      }
+
+      function drawProjectile() {
+        const p = state.projectile;
+        if (!p) return;
+        if (p.trail.length > 1) {
+          ctx.strokeStyle = "rgba(70,68,62,0.35)";
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          p.trail.forEach((point, index) => {
+            if (index === 0) ctx.moveTo(point.x, point.y);
+            else ctx.lineTo(point.x, point.y);
+          });
+          ctx.stroke();
+        }
+        ctx.fillStyle = "#252629";
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 6, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      function drawEffects() {
+        state.flashes.forEach(flash => {
+          const t = flash.life / flash.maxLife;
+          const radius = flash.radius * (1.2 - t * 0.2);
+          const gradient = ctx.createRadialGradient(flash.x, flash.y, 0, flash.x, flash.y, radius);
+          gradient.addColorStop(0, `rgba(255, 248, 190, ${0.95 * t})`);
+          gradient.addColorStop(0.34, `rgba(255, 166, 52, ${0.8 * t})`);
+          gradient.addColorStop(1, "rgba(255, 80, 25, 0)");
+          ctx.fillStyle = gradient;
+          ctx.beginPath();
+          ctx.arc(flash.x, flash.y, radius, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+        state.particles.forEach(p => {
+          const alpha = Math.max(0, p.life / p.maxLife);
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate(p.rotation);
+          ctx.fillStyle = `rgba(${p.color}, ${p.kind === "smoke" ? alpha * 0.48 : alpha})`;
+
+          if (p.kind === "smoke") {
+            ctx.beginPath();
+            ctx.arc(0, 0, p.radius, 0, Math.PI * 2);
+            ctx.fill();
+          } else if (p.kind === "spark") {
+            ctx.fillRect(-p.radius * 1.8, -p.radius / 2, p.radius * 3.6, p.radius);
+          } else {
+            ctx.fillRect(-p.radius, -p.radius * 0.55, p.radius * 2, p.radius * 1.1);
+          }
+          ctx.restore();
+        });
+      }
+
+      function draw() {
+        const shakeX = state.shake ? (Math.random() - 0.5) * state.shake : 0;
+        const shakeY = state.shake ? (Math.random() - 0.5) * state.shake * 0.65 : 0;
+        ctx.save();
+        ctx.translate(shakeX, shakeY);
+        ctx.drawImage(backdrop, 0, 0);
+        drawCannon("player");
+        drawCannon("cpu");
+        drawProjectile();
+        drawEffects();
+        ctx.restore();
+      }
+
+      function frame(timestamp) {
+        const dt = Math.min(0.033, (timestamp - state.lastTime) / 1000 || 0);
+        state.lastTime = timestamp;
+        updateProjectile(dt);
+        updateEffects(dt);
+        draw();
+        window.requestAnimationFrame(frame);
+      }
+
+      function clearTimers() {
+        if (state.cpuTimer) window.clearTimeout(state.cpuTimer);
+        if (state.transitionTimer) window.clearTimeout(state.transitionTimer);
+        state.cpuTimer = null;
+        state.transitionTimer = null;
+      }
+
+      function newRound() {
+        clearTimers();
+        state.turn = "player";
+        state.projectile = null;
+        state.winner = null;
+        state.cpuAngle = 45;
+        state.particles = [];
+        state.flashes = [];
+        state.recoil.player = 0;
+        state.recoil.cpu = 0;
+        state.shake = 0;
+        fireButton.textContent = "FIRE";
+        angleInput.value = "45";
+        powerInput.value = "70";
+        updateReadouts();
+        setWind(randomWind());
+        setStatus("Your turn");
+        setControlsEnabled(true);
+      }
+
+      angleInput.addEventListener("input", updateReadouts);
+      powerInput.addEventListener("input", updateReadouts);
+      fireButton.addEventListener("click", () => {
+        if (state.winner) {
+          newRound();
+          return;
+        }
+        if (state.turn !== "player" || state.projectile || state.transitionTimer) return;
+        fire("player", Number(angleInput.value), Number(powerInput.value));
+      });
+
+      window.addEventListener("keydown", event => {
+        if (event.code !== "Space" || event.repeat) return;
+        event.preventDefault();
+        fireButton.click();
+      });
+
+      renderBackdrop();
+      newRound();
+      window.requestAnimationFrame(frame);
+    })();
+  </script>
+</body>
+</html>
