@@ -11,7 +11,7 @@
   </style>
 </head>
 <body>
-  <iframe id="app" src="level3-app.html?v=8" title="Ballistics artillery game" scrolling="no"></iframe>
+  <iframe id="app" src="level3-app.html?v=9" title="Ballistics artillery game" scrolling="no"></iframe>
   <script>
     (()=>{
       const frame=document.getElementById("app");
@@ -81,7 +81,7 @@
         select.value=String(current);
         select.addEventListener("change",()=>{
           skipRestart=true;
-          frame.src=`level3-app.html?v=8&level=${select.value}`;
+          frame.src=`level3-app.html?v=9&level=${select.value}`;
         });
 
         wrap.appendChild(select);
@@ -91,7 +91,8 @@
       function addTowerMovement(game,gameFrame){
         if(game.getElementById("tower-movement-controls"))return;
         const stage=game.querySelector(".stage-label");
-        if(!stage)return;
+        const panel=game.querySelector(".controls");
+        if(!stage||!panel)return;
 
         const script=game.createElement("script");
         script.textContent=`
@@ -126,12 +127,13 @@
         `;
         game.body.appendChild(script);
 
-        const controls=game.createElement("span");
+        const controls=game.createElement("div");
         controls.id="tower-movement-controls";
-        controls.style.marginLeft="12px";
         controls.style.display="none";
+        controls.style.gridColumn="1 / -1";
         controls.style.alignItems="center";
-        controls.style.gap="6px";
+        controls.style.justifyContent="center";
+        controls.style.gap="8px";
         controls.style.font="700 12px system-ui";
         controls.style.letterSpacing=".06em";
 
@@ -142,19 +144,20 @@
         down.textContent="▼ DOWN";
         up.textContent="▲ UP";
         label.textContent="TOP";
-        label.style.minWidth="58px";
+        label.style.minWidth="70px";
         label.style.textAlign="center";
         for(const button of [down,up]){
-          button.style.padding="5px 9px";
-          button.style.minHeight="28px";
+          button.style.padding="0 14px";
+          button.style.minHeight="38px";
           button.style.fontSize="11px";
           button.style.letterSpacing=".06em";
         }
 
         let floor=2;
         const refresh=()=>{
-          const onLevel7=stage.textContent.includes("Three-Story Tower");
-          controls.style.display=onLevel7?"inline-flex":"none";
+          const selectedLevel=Number(new URL(frame.src,location.href).searchParams.get("level"))||1;
+          const onLevel7=selectedLevel===7||stage.textContent.includes("Three-Story Tower");
+          controls.style.display=onLevel7?"flex":"none";
           label.textContent=["BOTTOM","MIDDLE","TOP"][floor];
           down.disabled=floor===0;
           up.disabled=floor===2;
@@ -167,8 +170,8 @@
         });
         new MutationObserver(refresh).observe(stage,{childList:true,characterData:true,subtree:true});
 
-        const selector=game.getElementById("temporary-level-selector");
-        (selector||stage).after(controls);
+        controls.append(down,label,up);
+        panel.appendChild(controls);
         refresh();
       }
 
