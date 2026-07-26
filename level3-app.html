@@ -6,10 +6,15 @@
       'terrainY=x=>L<2?T(x):444-40*M.exp(-(((x-110)/170)**2))-120*M.exp(-(((x-855)/150)**2))+40*M.exp(-(((x-480)/210)**2))+5*M.sin(x*.022)+3*M.sin(x*.051);',
       'let B=x=>444-40*M.exp(-(((x-110)/170)**2))-120*M.exp(-(((x-855)/150)**2))+40*M.exp(-(((x-480)/210)**2))+5*M.sin(x*.022)+3*M.sin(x*.051);terrainY=x=>L<2?T(x):L<3?B(x):B(x)-48*M.exp(-(((x-66)/20)**2))-48*M.exp(-(((x-150)/20)**2))+30*M.exp(-(((x-108)/32)**2))-48*M.exp(-(((x-810)/20)**2))-48*M.exp(-(((x-894)/20)**2))+30*M.exp(-(((x-852)/32)**2));'
     );
-    h=h.replace('if(state.winner=="player"&&L==2)L=1;','if(state.winner=="player"&&L==3)L=1;');
-    h=h.replace('S.textContent="Stage "+L+(L<2?" · Open Hills":" · High Ground")','S.textContent="Stage "+L+(L==1?" · Open Hills":L==2?" · High Ground":" · Trenches")');
-    h=h.replace('let A=w=="player"&&L==1;','let A=w=="player"&&L<3;');
+    h=h.replace('if(state.winner=="player"&&L==2)L=1;','if(state.winner=="player"&&L==4)L=1;');
+    h=h.replace('S.textContent="Stage "+L+(L<2?" · Open Hills":" · High Ground")','S.textContent="Stage "+L+(L==1?" · Open Hills":L==2?" · High Ground":L==3?" · Trenches":" · Timber Defenses")');
+    h=h.replace('let A=w=="player"&&L==1;','let A=w=="player"&&L<4;');
     h=h.replace('if(A){L=2;state.winner=null;newRound()}','if(A){L++;state.winner=null;newRound()}');
+    h=h.replace(
+      'let R=renderBackdrop;renderBackdrop=()=>R();let S=document.querySelector(".stage-label"),N=newRound;',
+      'let W={player:2,cpu:2};function BR(s){let x=s=="player"?168:792,y=terrainY(x),n=W[s]||0;return{x,y,w:38,h:n*18}}function DB(s){let r=BR(s),n=W[s]||0;if(!n)return;bg.save();bg.fillStyle="#6b421f";bg.strokeStyle="#2f2115";bg.lineWidth=2;for(let i=0;i<n;i++){let y=r.y-16-i*18;bg.fillRect(r.x-r.w/2,y,r.w,14);bg.strokeRect(r.x-r.w/2,y,r.w,14);bg.fillStyle="#9a6934";for(let k=-12;k<=12;k+=12){bg.beginPath();bg.arc(r.x+k,y+7,3,0,M.PI*2);bg.fill()}bg.fillStyle="#6b421f"}bg.fillStyle="#4c321d";bg.fillRect(r.x-r.w/2-3,r.y-r.h-3,5,r.h+5);bg.fillRect(r.x+r.w/2-2,r.y-r.h-3,5,r.h+5);bg.restore()}let R=renderBackdrop;renderBackdrop=()=>{R();if(L==4){DB("player");DB("cpu")}};let U=updateProjectile;updateProjectile=dt=>{let p=state.projectile;if(L==4&&p){let nv=p.vy+WORLD.gravity*dt,nx=p.x+(p.vx+state.wind*4*dt)*dt,ny=p.y+nv*dt;for(let s of ["player","cpu"]){if(!W[s])continue;let r=BR(s),a=p.x-r.x,b=nx-r.x;if(a*b<=0&&nx!=p.x){let t=(r.x-p.x)/(nx-p.x),iy=p.y+(ny-p.y)*t;if(iy>=r.y-r.h-4&&iy<=r.y+5){W[s]--;for(let i=0;i<18;i++)addParticle({kind:"debris",x:r.x,y:iy,vx:(M.random()-.5)*190,vy:-45-M.random()*130,radius:2+M.random()*4,life:.55+M.random()*.55,gravity:260,drag:.99,rotation:M.random()*M.PI,spin:(M.random()-.5)*14,color:M.random()>.5?"122,78,36":"78,48,25"});renderBackdrop();continueAfterImpact(W[s]?"Timber struck.":"Barrier shattered!",720);return}}}}U(dt)};let S=document.querySelector(".stage-label"),N=newRound;'
+    );
+    h=h.replace('newRound=()=>{if(state.winner=="player"&&L==4)L=1;N();','newRound=()=>{if(state.winner=="player"&&L==4)L=1;if(L==4)W={player:2,cpu:2};N();');
     document.open();document.write(h);document.close();
   }catch{location.replace("app.html")}
 })();
