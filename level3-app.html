@@ -19,7 +19,7 @@
 
     h=h.replace(
       'let W={player:2,cpu:2},K={player:3,cpu:3},Q={player:3,cpu:3},CP=cannonPosition;cannonPosition=s=>{let p=CP(s);if(L==6)p.y-=58;return p};',
-      'let W={player:2,cpu:2},K={player:3,cpu:3},Q={player:3,cpu:3},CP=cannonPosition;function T7(s){let x=s=="player"?108:852,g=terrainY(x);return{x,ground:g,top:g-150,w:120,body:96}}cannonPosition=s=>{let p=CP(s);if(L==6)p.y-=58;else if(L==7)p.y=T7(s).top-15;return p};'
+      'let W={player:2,cpu:2},K={player:3,cpu:3},Q={player:3,cpu:3},F={player:2,cpu:2},Z={player:3,cpu:3},CP=cannonPosition;function T7(s){let x=s=="player"?108:852,g=terrainY(x);return{x,ground:g,top:g-150,w:120,body:96}}cannonPosition=s=>{let p=CP(s);if(L==6)p.y-=58;else if(L==7){let r=T7(s),f=F[s];p.y=f==2?r.top-15:f==1?r.ground-94:r.ground-40}return p};window.moveTower=d=>{if(L!=7||state.turn!="player"||state.projectile||state.winner||state.transitionTimer)return false;let n=M.max(0,M.min(2,F.player+d));if(n==F.player)return false;F.player=n;renderBackdrop();document.dispatchEvent(new CustomEvent("tower-floor-change",{detail:{floor:n}}));setControlsEnabled(false);setStatus("Moving to "+["bottom","middle","top"][n]+" level…");state.turn="cpu";state.cpuTimer=window.setTimeout(cpuTurn,850);return true};'
     );
     h=h.replace(
       'let R=renderBackdrop;',
@@ -29,7 +29,11 @@
       'else if(L==6){DT("player");DT("cpu")}};',
       'else if(L==6){DT("player");DT("cpu")}else if(L==7){D7("player");D7("cpu")}};'
     );
-    h=h.replace('newRound=()=>{if(state.winner=="player"&&L==7)L=1;N();','newRound=()=>{if(state.winner=="player"&&L==7)L=1;if(L==4)W={player:2,cpu:2};if(L==5)K={player:3,cpu:3};if(L==6)Q={player:3,cpu:3};N();');
+    h=h.replace(
+      'let S=document.querySelector(".stage-label"),N=newRound;',
+      'let U7=updateProjectile;updateProjectile=dt=>{let p=state.projectile;if(L==7&&p){let s=p.owner=="player"?"cpu":"player",r=T7(s),nv=p.vy+WORLD.gravity*dt,nx=p.x+(p.vx+state.wind*4*dt)*dt,ny=p.y+nv*dt,edge=s=="cpu"?r.x-r.body/2:r.x+r.body/2,den=nx-p.x;if(den){let t=(edge-p.x)/den,iy=p.y+(ny-p.y)*t;if(t>=0&&t<=1&&iy>=r.top-52&&iy<=r.ground){Z[s]--;for(let i=0;i<26;i++)addParticle({kind:"debris",x:edge,y:iy,vx:(M.random()-.5)*170,vy:-35-M.random()*120,radius:3+M.random()*5,life:.6+M.random()*.7,gravity:280,drag:.99,rotation:M.random()*M.PI,spin:(M.random()-.5)*12,color:M.random()>.5?"112,116,114":"79,84,82"});renderBackdrop();if(Z[s]<=0){endRound(p.owner)}else{continueAfterImpact(Z[s]==2?"Tower struck.":"Tower collapsing!",720)}return}}}U7(dt)};let S=document.querySelector(".stage-label"),N=newRound;'
+    );
+    h=h.replace('newRound=()=>{if(state.winner=="player"&&L==7)L=1;N();','newRound=()=>{if(state.winner=="player"&&L==7)L=1;if(L==4)W={player:2,cpu:2};if(L==5)K={player:3,cpu:3};if(L==6)Q={player:3,cpu:3};if(L==7){F={player:2,cpu:2};Z={player:3,cpu:3};document.dispatchEvent(new CustomEvent("tower-floor-change",{detail:{floor:2}}))}N();');
     document.open();document.write(h);document.close();
   }catch(e){console.error(e);location.replace("app.html")}
 })();
