@@ -17,6 +17,8 @@
       const frame=document.getElementById("app");
       const baseWidth=1000;
       const baseHeight=820;
+      let skipRestart=false;
+      let introTimer=null;
 
       function fit(){
         const scale=Math.min(1,innerWidth/baseWidth,innerHeight/baseHeight);
@@ -86,12 +88,49 @@
         const d=frame.contentDocument;
         const begin=d&&d.getElementById("begin");
         const open=d&&d.getElementById("open");
-        if(begin&&open){
+        const card=d&&d.getElementById("card");
+
+        if(skipRestart&&begin&&open){
+          const w=frame.contentWindow;
+          const RealAudio=w.Audio;
+          w.Audio=function(src){
+            const audio=new RealAudio(src);
+            const realPlay=audio.play.bind(audio);
+            let firstPlay=true;
+            audio.play=()=>{
+              if(firstPlay){firstPlay=false;return Promise.resolve()}
+              return realPlay();
+            };
+            return audio;
+          };
+          begin.click();
+          w.Audio=RealAudio;
+          open.hidden=true;
+          skipRestart=false;
+          watchGame();
+          return;
+        }
+
+        if(begin&&open&&card){
+          const skip=d.createElement("button");
+          skip.type="button";
+          skip.textContent="SKIP INTRO";
+          skip.hidden=true;
+          skip.style.marginLeft="10px";
+          card.appendChild(skip);
+
           begin.addEventListener("click",()=>{
             open.hidden=false;
             begin.disabled=true;
             begin.textContent="OPENING FIRE...";
-            setTimeout(()=>{open.hidden=true},16400);
+            skip.hidden=false;
+            introTimer=setTimeout(()=>{open.hidden=true},16400);
+          });
+
+          skip.addEventListener("click",()=>{
+            clearTimeout(introTimer);
+            skipRestart=true;
+            frame.src=frame.src;
           });
         }
         watchGame();
