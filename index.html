@@ -83,6 +83,18 @@
       }
 
       frame.addEventListener("load",()=>{
+        const w=frame.contentWindow;
+        const media=w&&w.HTMLMediaElement&&w.HTMLMediaElement.prototype;
+        const volume=media&&Object.getOwnPropertyDescriptor(media,"volume");
+        if(volume&&volume.get&&volume.set){
+          Object.defineProperty(media,"volume",{
+            configurable:volume.configurable,
+            enumerable:volume.enumerable,
+            get:volume.get,
+            set(value){volume.set.call(this,Math.min(value,.52))}
+          });
+        }
+
         const d=frame.contentDocument;
         const begin=d&&d.getElementById("begin");
         const open=d&&d.getElementById("open");
