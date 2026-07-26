@@ -11,7 +11,7 @@
   </style>
 </head>
 <body>
-  <iframe id="app" src="level3-app.html?v=9" title="Ballistics artillery game" scrolling="no"></iframe>
+  <iframe id="app" src="level3-app.html?v=10" title="Ballistics artillery game" scrolling="no"></iframe>
   <script>
     (()=>{
       const frame=document.getElementById("app");
@@ -81,7 +81,7 @@
         select.value=String(current);
         select.addEventListener("change",()=>{
           skipRestart=true;
-          frame.src=`level3-app.html?v=9&level=${select.value}`;
+          frame.src=`level3-app.html?v=10&level=${select.value}`;
         });
 
         wrap.appendChild(select);
@@ -93,39 +93,6 @@
         const stage=game.querySelector(".stage-label");
         const panel=game.querySelector(".controls");
         if(!stage||!panel)return;
-
-        const script=game.createElement("script");
-        script.textContent=`
-          (()=>{
-            if(window.__towerMovementReady)return;
-            window.__towerMovementReady=true;
-            let towerFloor=2;
-            const towerBasePosition=cannonPosition;
-            cannonPosition=side=>{
-              const p=towerBasePosition(side);
-              if(L===7&&side==="player"){
-                const ground=terrainY(108);
-                p.y=towerFloor===2?ground-165:towerFloor===1?ground-94:ground-40;
-              }
-              return p;
-            };
-            window.moveTower=direction=>{
-              if(L!==7||state.turn!=="player"||state.projectile||state.winner||state.transitionTimer)return false;
-              const next=Math.max(0,Math.min(2,towerFloor+direction));
-              if(next===towerFloor)return false;
-              towerFloor=next;
-              renderBackdrop();
-              document.dispatchEvent(new CustomEvent("tower-floor-change",{detail:{floor:towerFloor}}));
-              setControlsEnabled(false);
-              setStatus("Moving to "+["bottom","middle","top"][towerFloor]+" level…");
-              state.turn="cpu";
-              state.cpuTimer=window.setTimeout(cpuTurn,850);
-              return true;
-            };
-            document.dispatchEvent(new CustomEvent("tower-floor-change",{detail:{floor:towerFloor}}));
-          })();
-        `;
-        game.body.appendChild(script);
 
         const controls=game.createElement("div");
         controls.id="tower-movement-controls";
