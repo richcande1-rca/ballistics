@@ -11,7 +11,7 @@
   </style>
 </head>
 <body>
-  <iframe id="app" src="level3-app.html?v=4" title="Ballistics artillery game" scrolling="no"></iframe>
+  <iframe id="app" src="level3-app.html?v=5" title="Ballistics artillery game" scrolling="no"></iframe>
   <script>
     (()=>{
       const frame=document.getElementById("app");
@@ -48,7 +48,7 @@
         select.style.border="1px solid #607089";
         select.setAttribute("aria-label","Temporary level selector");
 
-        const names=["Open Hills","High Ground","Trenches","Timber Defenses","Stone Defenses"];
+        const names=["Open Hills","High Ground","Trenches","Timber Defenses","Stone Defenses","Stone Tower"];
         names.forEach((name,i)=>{
           const option=game.createElement("option");
           option.value=String(i+1);
@@ -60,7 +60,7 @@
         select.value=String(current);
         select.addEventListener("change",()=>{
           skipRestart=true;
-          frame.src=`level3-app.html?v=4&level=${select.value}`;
+          frame.src=`level3-app.html?v=5&level=${select.value}`;
         });
 
         wrap.appendChild(select);
