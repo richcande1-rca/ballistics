@@ -1,0 +1,16 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Ballistics</title></head><body><script>
+(async()=>{
+  try{
+    let h=await fetch("app.html",{cache:"no-store"}).then(r=>{if(!r.ok)throw Error(r.status);return r.text()});
+    h=h.replace(
+      'terrainY=x=>L<2?T(x):444-40*M.exp(-(((x-110)/170)**2))-120*M.exp(-(((x-855)/150)**2))+40*M.exp(-(((x-480)/210)**2))+5*M.sin(x*.022)+3*M.sin(x*.051);',
+      'let B=x=>444-40*M.exp(-(((x-110)/170)**2))-120*M.exp(-(((x-855)/150)**2))+40*M.exp(-(((x-480)/210)**2))+5*M.sin(x*.022)+3*M.sin(x*.051);terrainY=x=>L<2?T(x):L<3?B(x):B(x)-48*M.exp(-(((x-66)/20)**2))-48*M.exp(-(((x-150)/20)**2))+30*M.exp(-(((x-108)/32)**2))-48*M.exp(-(((x-810)/20)**2))-48*M.exp(-(((x-894)/20)**2))+30*M.exp(-(((x-852)/32)**2));'
+    );
+    h=h.replace('if(state.winner=="player"&&L==2)L=1;','if(state.winner=="player"&&L==3)L=1;');
+    h=h.replace('S.textContent="Stage "+L+(L<2?" · Open Hills":" · High Ground")','S.textContent="Stage "+L+(L==1?" · Open Hills":L==2?" · High Ground":" · Trenches")');
+    h=h.replace('let A=w=="player"&&L==1;','let A=w=="player"&&L<3;');
+    h=h.replace('if(A){L=2;state.winner=null;newRound()}','if(A){L++;state.winner=null;newRound()}');
+    document.open();document.write(h);document.close();
+  }catch{location.replace("app.html")}
+})();
+</script></body></html>
