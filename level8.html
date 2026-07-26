@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Ballistics · Level 8</title>
+  <style>
+    *{box-sizing:border-box}
+    html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#151817}
+    iframe{position:absolute;left:0;top:0;border:0;transform-origin:0 0;background:#151817}
+  </style>
+</head>
+<body>
+  <iframe id="app" src="level8-app.html?level=8" title="Ballistics Level 8" scrolling="no"></iframe>
+  <script>
+    const frame=document.getElementById("app"),baseWidth=1000,baseHeight=820;
+    function fit(){const scale=Math.min(1,innerWidth/baseWidth,innerHeight/baseHeight);frame.style.width=innerWidth/scale+"px";frame.style.height=innerHeight/scale+"px";frame.style.transform=`scale(${scale})`}
+    addEventListener("resize",fit,{passive:true});fit();
+  </script>
+</body>
+</html>
