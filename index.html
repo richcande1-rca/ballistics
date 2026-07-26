@@ -11,7 +11,7 @@
   </style>
 </head>
 <body>
-  <iframe id="app" src="level3-app.html?v=11" title="Ballistics artillery game" scrolling="no"></iframe>
+  <iframe id="app" src="level3-app.html?v=12" title="Ballistics artillery game" scrolling="no"></iframe>
   <script>
     (()=>{
       const frame=document.getElementById("app");
@@ -81,7 +81,7 @@
         select.value=String(current);
         select.addEventListener("change",()=>{
           skipRestart=true;
-          frame.src=`level3-app.html?v=11&level=${select.value}`;
+          frame.src=`level3-app.html?v=12&level=${select.value}`;
         });
 
         wrap.appendChild(select);
