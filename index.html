@@ -30,16 +30,20 @@
       function limitThemeToOpening(){
         const w=frame.contentWindow;
         if(!w||w.__ballisticsThemeLimited)return;
-        const originalPlay=w.HTMLMediaElement&&w.HTMLMediaElement.prototype.play;
-        if(!originalPlay)return;
+        const RealAudio=w.Audio;
         let themePlayed=false;
-        w.HTMLMediaElement.prototype.play=function(){
-          const src=this.currentSrc||this.src||"";
-          if(src.includes("original-pastoral-theme.mp3")){
-            if(themePlayed)return Promise.resolve();
-            themePlayed=true;
-          }
-          return originalPlay.call(this);
+        w.Audio=function(src){
+          const audio=new RealAudio(src);
+          const realPlay=audio.play.bind(audio);
+          audio.play=()=>{
+            const source=audio.currentSrc||audio.src||String(src||"");
+            if(source.includes("original-pastoral-theme.mp3")){
+              if(themePlayed)return Promise.resolve();
+              themePlayed=true;
+            }
+            return realPlay();
+          };
+          return audio;
         };
         w.__ballisticsThemeLimited=true;
       }
