@@ -27,11 +27,53 @@
         frame.style.transform=`scale(${scale})`;
       }
 
+      function addLevelSelector(game){
+        if(game.getElementById("temporary-level-selector"))return;
+        const stage=game.querySelector(".stage-label");
+        if(!stage)return;
+
+        const wrap=game.createElement("label");
+        wrap.id="temporary-level-selector";
+        wrap.textContent="LEVEL ";
+        wrap.style.marginLeft="14px";
+        wrap.style.font="700 12px system-ui";
+        wrap.style.letterSpacing=".08em";
+
+        const select=game.createElement("select");
+        select.style.marginLeft="5px";
+        select.style.padding="3px 7px";
+        select.style.borderRadius="6px";
+        select.style.background="#18253a";
+        select.style.color="#fff";
+        select.style.border="1px solid #607089";
+        select.setAttribute("aria-label","Temporary level selector");
+
+        const names=["Open Hills","High Ground","Trenches","Timber Defenses"];
+        names.forEach((name,i)=>{
+          const option=game.createElement("option");
+          option.value=String(i+1);
+          option.textContent=`${i+1} · ${name}`;
+          select.appendChild(option);
+        });
+
+        const current=Number(new URL(frame.src,location.href).searchParams.get("level"))||1;
+        select.value=String(current);
+        select.addEventListener("change",()=>{
+          skipRestart=true;
+          frame.src=`level3-app.html?level=${select.value}`;
+        });
+
+        wrap.appendChild(select);
+        stage.after(wrap);
+      }
+
       function addPrecisionButtons(){
         const outer=frame.contentDocument;
         const gameFrame=outer&&outer.querySelector("#g");
         const game=gameFrame&&gameFrame.contentDocument;
         if(!game)return false;
+
+        addLevelSelector(game);
 
         if(!game.getElementById("precision-button-style")){
           const style=game.createElement("style");
