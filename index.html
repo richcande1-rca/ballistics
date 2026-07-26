@@ -23,6 +23,18 @@
         frame.style.height=(innerHeight/scale)+"px";
         frame.style.transform=`scale(${scale})`;
       }
+      frame.addEventListener("load",()=>{
+        const d=frame.contentDocument;
+        const begin=d&&d.getElementById("begin");
+        const open=d&&d.getElementById("open");
+        if(!begin||!open)return;
+        begin.addEventListener("click",()=>{
+          open.hidden=false;
+          begin.disabled=true;
+          begin.textContent="OPENING FIRE...";
+          setTimeout(()=>{open.hidden=true},16400);
+        });
+      });
       addEventListener("resize",fit,{passive:true});
       fit();
     })();
