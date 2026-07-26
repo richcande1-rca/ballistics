@@ -17,24 +17,86 @@
       const frame=document.getElementById("app");
       const baseWidth=1000;
       const baseHeight=820;
+
       function fit(){
         const scale=Math.min(1,innerWidth/baseWidth,innerHeight/baseHeight);
         frame.style.width=(innerWidth/scale)+"px";
         frame.style.height=(innerHeight/scale)+"px";
         frame.style.transform=`scale(${scale})`;
       }
+
+      function addPrecisionButtons(){
+        const outer=frame.contentDocument;
+        const gameFrame=outer&&outer.querySelector("#g");
+        const game=gameFrame&&gameFrame.contentDocument;
+        if(!game)return false;
+
+        if(!game.getElementById("precision-button-style")){
+          const style=game.createElement("style");
+          style.id="precision-button-style";
+          style.textContent=`
+            .precision-row{display:grid;grid-template-columns:34px minmax(0,1fr) 34px;gap:7px;align-items:center}
+            .precision-row input[type="range"]{min-width:0}
+            .precision-step{min-height:30px;height:30px;padding:0;border-radius:8px;font-size:1.2rem;line-height:1;letter-spacing:0}
+          `;
+          game.head.appendChild(style);
+        }
+
+        for(const id of ["angle","power"]){
+          const slider=game.getElementById(id);
+          if(!slider||slider.parentElement.classList.contains("precision-row"))continue;
+
+          const row=game.createElement("div");
+          row.className="precision-row";
+          const minus=game.createElement("button");
+          const plus=game.createElement("button");
+          minus.type=plus.type="button";
+          minus.className=plus.className="precision-step";
+          minus.textContent="−";
+          plus.textContent="+";
+          minus.setAttribute("aria-label",`Decrease ${id}`);
+          plus.setAttribute("aria-label",`Increase ${id}`);
+
+          slider.before(row);
+          row.append(minus,slider,plus);
+
+          const step=direction=>{
+            const amount=Number(slider.step)||1;
+            const min=Number(slider.min);
+            const max=Number(slider.max);
+            slider.value=Math.max(min,Math.min(max,Number(slider.value)+direction*amount));
+            slider.dispatchEvent(new Event("input",{bubbles:true}));
+            slider.focus();
+          };
+          minus.addEventListener("click",()=>step(-1));
+          plus.addEventListener("click",()=>step(1));
+        }
+        return true;
+      }
+
+      function watchGame(){
+        const outer=frame.contentDocument;
+        const gameFrame=outer&&outer.querySelector("#g");
+        if(!gameFrame){setTimeout(watchGame,100);return}
+        gameFrame.addEventListener("load",()=>setTimeout(addPrecisionButtons,0));
+        if(!addPrecisionButtons())setTimeout(watchGame,100);
+      }
+
       frame.addEventListener("load",()=>{
         const d=frame.contentDocument;
         const begin=d&&d.getElementById("begin");
         const open=d&&d.getElementById("open");
-        if(!begin||!open)return;
-        begin.addEventListener("click",()=>{
-          open.hidden=false;
-          begin.disabled=true;
-          begin.textContent="OPENING FIRE...";
-          setTimeout(()=>{open.hidden=true},16400);
-        });
+        if(begin&&open){
+          begin.addEventListener("click",()=>{
+            open.hidden=false;
+            begin.disabled=true;
+            begin.textContent="OPENING FIRE...";
+            setTimeout(()=>{open.hidden=true},16400);
+          });
+        }
+        watchGame();
       });
+
       addEventListener("resize",fit,{passive:true});
       fit();
     })();
