@@ -27,6 +27,23 @@
         frame.style.transform=`scale(${scale})`;
       }
 
+      function limitThemeToOpening(){
+        const w=frame.contentWindow;
+        if(!w||w.__ballisticsThemeLimited)return;
+        const originalPlay=w.HTMLMediaElement&&w.HTMLMediaElement.prototype.play;
+        if(!originalPlay)return;
+        let themePlayed=false;
+        w.HTMLMediaElement.prototype.play=function(){
+          const src=this.currentSrc||this.src||"";
+          if(src.includes("original-pastoral-theme.mp3")){
+            if(themePlayed)return Promise.resolve();
+            themePlayed=true;
+          }
+          return originalPlay.call(this);
+        };
+        w.__ballisticsThemeLimited=true;
+      }
+
       function addLevelSelector(game){
         if(game.getElementById("temporary-level-selector"))return;
         const stage=game.querySelector(".stage-label");
@@ -127,6 +144,7 @@
       }
 
       frame.addEventListener("load",()=>{
+        limitThemeToOpening();
         const d=frame.contentDocument;
         const begin=d&&d.getElementById("begin");
         const open=d&&d.getElementById("open");
