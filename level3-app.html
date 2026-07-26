@@ -34,6 +34,22 @@
       'let U7=updateProjectile;updateProjectile=dt=>{let p=state.projectile;if(L==7&&p){let s=p.owner=="player"?"cpu":"player",r=T7(s),nv=p.vy+WORLD.gravity*dt,nx=p.x+(p.vx+state.wind*4*dt)*dt,ny=p.y+nv*dt,edge=s=="cpu"?r.x-r.body/2:r.x+r.body/2,den=nx-p.x;if(den){let t=(edge-p.x)/den,iy=p.y+(ny-p.y)*t;if(t>=0&&t<=1&&iy>=r.top-52&&iy<=r.ground){Z[s]--;for(let i=0;i<26;i++)addParticle({kind:"debris",x:edge,y:iy,vx:(M.random()-.5)*170,vy:-35-M.random()*120,radius:3+M.random()*5,life:.6+M.random()*.7,gravity:280,drag:.99,rotation:M.random()*M.PI,spin:(M.random()-.5)*12,color:M.random()>.5?"112,116,114":"79,84,82"});renderBackdrop();if(Z[s]<=0){endRound(p.owner)}else{continueAfterImpact(Z[s]==2?"Tower struck.":"Tower collapsing!",720)}return}}}U7(dt)};let S=document.querySelector(".stage-label"),N=newRound;'
     );
     h=h.replace('newRound=()=>{if(state.winner=="player"&&L==7)L=1;N();','newRound=()=>{if(state.winner=="player"&&L==7)L=1;if(L==4)W={player:2,cpu:2};if(L==5)K={player:3,cpu:3};if(L==6)Q={player:3,cpu:3};if(L==7){F={player:2,cpu:2};Z={player:3,cpu:3};document.dispatchEvent(new CustomEvent("tower-floor-change",{detail:{floor:2}}))}N();');
+    h=h.replace(
+      'targetHit=p=>{let t=cannonPosition(p.owner==="player"?"cpu":"player"),x=p.x-t.x,y=p.y-(t.y-3);return Math.hypot(x,y)<=9};',
+      'let CG=cg;cg=s=>{if(L==7&&F[s]<2){let r=T7(s),d=s==="player"?1:-1,cy=F[s]?r.ground-94:r.ground-40,hx=r.x+d*34;ctx.save();ctx.beginPath();ctx.rect(hx-15,cy-10,30,20);ctx.clip();CG(s);ctx.restore()}else CG(s)};targetHit=p=>{let side=p.owner==="player"?"cpu":"player";if(L==7&&Z[side]>0)return false;let t=cannonPosition(side),x=p.x-t.x,y=p.y-(t.y-3);return Math.hypot(x,y)<=9};'
+    );
+    h=h.replace(
+      'bg.fillRect(hx-20,cy-15,40,30);bg.strokeRect(hx-20,cy-15,40,30);bg.fillStyle="rgba(230,230,215,.12)";bg.fillRect(hx-16,cy-11,32,3)',
+      'bg.fillRect(hx-15,cy-10,30,20);bg.strokeRect(hx-15,cy-10,30,20);bg.fillStyle="rgba(230,230,215,.12)";bg.fillRect(hx-12,cy-7,24,2)'
+    );
+    h=h.replace(
+      'for(let i=0;i<3;i++){let y=r.top-12-i*13,bw=30,start=r.x-r.w/2-(i%2?15:0);',
+      'let n=Z[s];for(let i=0;i<n;i++){let y=r.top-12-i*13,bw=30,start=r.x-r.w/2-(i%2?15:0);'
+    );
+    h=h.replace(
+      'let y=r.top-51;bg.fillStyle="#737876";for(let x of [r.x-r.w/2,r.x-14,r.x+r.w/2-28])bg.fillRect(x,y,28,12);bg.restore()',
+      'if(Z[s]==3){let y=r.top-51;bg.fillStyle="#737876";for(let x of [r.x-r.w/2,r.x-14,r.x+r.w/2-28])bg.fillRect(x,y,28,12)}bg.restore()'
+    );
     document.open();document.write(h);document.close();
   }catch(e){console.error(e);location.replace("app.html")}
 })();
