@@ -8,6 +8,7 @@
     s=s.replace('if(state.winner=="player"&&L==7)L=1;','if(state.winner=="player"&&L==8)L=1;');
     s=s.replaceAll('L==7&&','L>=7&&');
     s=s.replaceAll('L!=7||','L<7||');
+    s=s.replace('else if(L==7){let r=T7','else if(L>=7){let r=T7');
     s=s.replace('else if(L==7){D7("player");D7("cpu")}','else if(L>=7){D7("player");D7("cpu")}');
     s=s.replace('if(L==7){F={player:2,cpu:2};Z={player:3,cpu:3};document.dispatchEvent','if(L>=7){F={player:2,cpu:2};Z=L==8?{player:6,cpu:6}:{player:3,cpu:3};document.dispatchEvent');
     s=s.replace('document.open();document.write(h);document.close();',`
