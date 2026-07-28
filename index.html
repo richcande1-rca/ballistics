@@ -20,7 +20,7 @@
   </style>
 </head>
 <body>
-  <iframe id="app" src="level8-app.html?v=16" title="Ballistics artillery game" scrolling="no" allow="fullscreen"></iframe>
+  <iframe id="app" src="level8-app.html?v=17" title="Ballistics artillery game" scrolling="no" allow="fullscreen"></iframe>
   <div id="rotate" role="status" aria-live="polite"><div class="card"><div class="phone" aria-hidden="true"></div><strong>ROTATE TO LANDSCAPE</strong><span>Turn your phone sideways to play Ballistics.</span></div></div>
   <script>
     (()=>{
@@ -32,9 +32,7 @@
 
       function isLandscapePhone(){return matchMedia("(pointer:coarse)").matches&&innerWidth>innerHeight}
       function fit(){
-        const mobile=isLandscapePhone();
-        const targetHeight=mobile?620:baseHeight;
-        const scale=Math.min(1,innerWidth/baseWidth,innerHeight/targetHeight);
+        const scale=Math.min(1,innerWidth/baseWidth,innerHeight/baseHeight);
         frame.style.width=(innerWidth/scale)+"px";
         frame.style.height=(innerHeight/scale)+"px";
         frame.style.transform=`scale(${scale})`;
@@ -96,7 +94,7 @@
         select.value=String(current);
         select.addEventListener("change",()=>{
           skipRestart=true;
-          frame.src=`level8-app.html?v=16&level=${select.value}`;
+          frame.src=`level8-app.html?v=17&level=${select.value}`;
         });
         wrap.appendChild(select);
         stage.after(wrap);
@@ -157,28 +155,28 @@
           html,body{overscroll-behavior:none}
           input,button,select{touch-action:manipulation}
           @media (pointer:coarse) and (orientation:landscape){
-            body{padding:4px 8px 6px;display:block;overflow:hidden}
-            .game-shell{width:100%;height:100%;max-width:none;gap:4px;grid-template-rows:auto minmax(0,1fr) auto auto}
-            .topbar{min-height:25px;padding:0 4px;align-items:center}
+            body{padding:2px 6px 4px;display:block;overflow:hidden}
+            .game-shell{width:100%;height:100%;max-width:none;gap:3px;grid-template-rows:auto minmax(0,1fr) auto auto}
+            .topbar{min-height:20px;padding:0 3px;align-items:center}
             h1{display:none}
-            .stage-label{font-size:.78rem;text-align:left;white-space:nowrap}
-            #temporary-level-selector{font-size:10px!important;margin-left:8px!important}
-            #temporary-level-selector select{min-height:28px;padding:2px 5px!important}
-            .canvas-wrap{min-height:0;border-radius:9px}
+            .stage-label{font-size:.68rem;text-align:left;white-space:nowrap}
+            #temporary-level-selector{font-size:9px!important;margin-left:6px!important}
+            #temporary-level-selector select{min-height:24px;padding:1px 4px!important}
+            .canvas-wrap{min-height:0;border-radius:7px}
             canvas{height:100%;width:100%;object-fit:contain;aspect-ratio:auto}
-            .status{top:6px;padding:5px 10px;font-size:.76rem}
-            .controls{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 132px;gap:8px;padding:7px 8px;border-radius:9px;align-items:center}
-            .control{gap:2px}
-            .control-head{font-size:.72rem}
-            .precision-row{grid-template-columns:42px minmax(0,1fr) 42px!important;gap:5px!important;min-height:44px}
-            .precision-step{height:44px!important;min-height:44px!important;font-size:1.35rem!important}
-            input[type=range]{height:44px;margin:0}
-            input[type=range]::-webkit-slider-thumb{width:28px;height:28px}
+            .status{top:4px;padding:4px 8px;font-size:.68rem}
+            .controls{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 112px;gap:5px;padding:4px 6px;border-radius:7px;align-items:center}
+            .control{gap:1px}
+            .control-head{font-size:.66rem}
+            .precision-row{grid-template-columns:36px minmax(0,1fr) 36px!important;gap:4px!important;min-height:38px}
+            .precision-step{height:38px!important;min-height:38px!important;font-size:1.2rem!important}
+            input[type=range]{height:38px;margin:0}
+            input[type=range]::-webkit-slider-thumb{width:26px;height:26px}
             .range-scale{display:none}
-            #fire{height:50px;min-height:50px;padding:0 10px;font-size:.9rem}
-            #tower-movement-controls{grid-column:1 / -1!important;height:42px;margin-top:-2px}
-            #tower-movement-controls button{min-height:40px!important;min-width:92px;font-size:12px!important}
-            .readout{font-size:.72rem;padding:0 4px;min-height:18px}
+            #fire{height:42px;min-height:42px;padding:0 8px;font-size:.82rem}
+            #tower-movement-controls{grid-column:1 / -1!important;height:36px;margin-top:-2px}
+            #tower-movement-controls button{min-height:34px!important;min-width:82px;font-size:11px!important}
+            .readout{font-size:.66rem;padding:0 3px;min-height:14px}
           }
         `;
         game.head.appendChild(style);
