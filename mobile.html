@@ -46,16 +46,36 @@
       const fire=document.getElementById('fire');
       let deepest=null;
 
-      function findGameDocument(){
+      function nestedDocuments(){
         try{
           const d1=frame.contentDocument;
           const f1=d1&&d1.querySelector('#g');
           const d2=f1&&f1.contentDocument;
           const f2=d2&&d2.querySelector('#g');
           const d3=f2&&f2.contentDocument;
-          const docs=[d3,d2,d1].filter(Boolean);
-          return docs.find(d=>d.getElementById('angle')&&d.getElementById('power')&&d.getElementById('fire'))||null;
-        }catch(_){return null}
+          return [d1,d2,d3].filter(Boolean);
+        }catch(_){return []}
+      }
+
+      function findGameDocument(){
+        return nestedDocuments().reverse().find(d=>d.getElementById('angle')&&d.getElementById('power')&&d.getElementById('fire'))||null;
+      }
+
+      function startEmbeddedGame(){
+        const docs=nestedDocuments();
+        for(const doc of docs){
+          const embeddedBegin=doc.getElementById('begin');
+          const embeddedOpen=doc.getElementById('open');
+          if(embeddedBegin&&!embeddedBegin.disabled)embeddedBegin.click();
+          if(embeddedOpen)embeddedOpen.hidden=true;
+        }
+        setTimeout(()=>{
+          for(const doc of nestedDocuments()){
+            const embeddedOpen=doc.getElementById('open');
+            if(embeddedOpen)embeddedOpen.hidden=true;
+          }
+          bind();
+        },120);
       }
 
       function styleGame(doc){
@@ -96,14 +116,15 @@
       async function enterFullscreen(){
         try{if(!document.fullscreenElement)await document.documentElement.requestFullscreen()}catch(_){ }
         try{await screen.orientation?.lock?.('landscape')}catch(_){ }
-        setTimeout(bind,120);
-        setTimeout(bind,450);
       }
 
       begin.addEventListener('click',async()=>{
+        begin.disabled=true;
         await enterFullscreen();
+        startEmbeddedGame();
         start.hidden=true;
-        bind();
+        setTimeout(bind,120);
+        setTimeout(bind,450);
       });
 
       frame.addEventListener('load',()=>{setTimeout(bind,100);setTimeout(bind,500);setTimeout(bind,1200)});
