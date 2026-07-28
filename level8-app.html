@@ -1,6 +1,11 @@
 <!doctype html><html><head><meta charset="utf-8"><title>Ballistics</title></head><body><script>
 (async()=>{
   try{
+    try{
+      const onPhone=top!==window&&top.matchMedia("(pointer:coarse)").matches;
+      const alreadyMobile=/\/mobile\.html$/.test(top.location.pathname);
+      if(onPhone&&!alreadyMobile){top.location.replace("mobile.html");return}
+    }catch(_){ }
     let s=await fetch("level3-app.html",{cache:"no-store"}).then(r=>{if(!r.ok)throw Error(r.status);return r.text()});
     s=s.replace('Math.min(7,Number','Math.min(8,Number');
     s=s.replace('L==6?" · Stone Tower":" · Three-Story Tower"','L==6?" · Stone Tower":L==7?" · Three-Story Tower":" · Archer Siege"');
