@@ -16,35 +16,42 @@
     .control output{min-width:30px;text-align:right}
     #fire{height:52px;border:0;border-radius:9px;background:#f1b84b;color:#241707;font-weight:900;font-size:16px;letter-spacing:.08em;touch-action:manipulation}
     #fire:disabled{opacity:.45}
-    #start,#rotate{position:fixed;inset:0;z-index:20;display:grid;place-items:center;padding:24px;background:#151817;color:#efe6ca;text-align:center}
+    #start,#intro,#rotate{position:fixed;inset:0;z-index:20;display:grid;place-items:center;padding:24px;background:#151817;color:#efe6ca;text-align:center}
+    #intro{display:none;background:rgba(12,16,15,.94);z-index:25}
     #rotate{display:none;z-index:30}
     .card{max-width:420px}
     .title{margin:0 0 12px;font:900 clamp(2rem,8vw,4rem)/.95 Georgia,serif;letter-spacing:.08em}
     .sub{margin:0 0 22px;color:#bdb59f;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
-    #begin{padding:14px 30px;border:0;background:#d8bd76;color:#1b1c18;font-weight:900;font-size:17px;letter-spacing:.12em}
+    #begin,#skipIntro{padding:14px 30px;border:0;background:#d8bd76;color:#1b1c18;font-weight:900;font-size:17px;letter-spacing:.12em}
+    #skipIntro{margin-top:18px;padding:11px 22px;font-size:13px;background:#263247;color:#f5f7fb;border:1px solid #607089}
     @media (orientation:portrait){#rotate{display:grid}}
   </style>
 </head>
 <body>
-  <div id="gameHost"><iframe id="gameFrame" src="level8-app.html?v=18" title="Ballistics artillery game" allow="fullscreen"></iframe></div>
+  <div id="gameHost"><iframe id="gameFrame" src="level8-app.html?v=19" title="Ballistics artillery game" allow="fullscreen"></iframe></div>
   <section id="controls" aria-label="Cannon controls">
     <label class="control">ANGLE<input id="angle" type="range" min="10" max="80" value="45" step="1"><output id="angleValue">45°</output></label>
     <label class="control">POWER<input id="power" type="range" min="30" max="120" value="70" step="1"><output id="powerValue">70</output></label>
     <button id="fire" type="button" disabled>FIRE</button>
   </section>
   <div id="start"><div class="card"><h1 class="title">BALLISTICS</h1><p class="sub">Mobile landscape mode</p><button id="begin" type="button">BEGIN</button></div></div>
+  <div id="intro"><div class="card"><h1 class="title">OPENING FIRE</h1><p class="sub">The campaign begins…</p><button id="skipIntro" type="button">SKIP INTRO</button></div></div>
   <div id="rotate"><div class="card"><h1 class="title">ROTATE</h1><p class="sub">Turn your phone sideways.</p></div></div>
   <script>
     (()=>{
       const frame=document.getElementById('gameFrame');
       const start=document.getElementById('start');
+      const intro=document.getElementById('intro');
       const begin=document.getElementById('begin');
+      const skipIntro=document.getElementById('skipIntro');
       const angle=document.getElementById('angle');
       const power=document.getElementById('power');
       const angleValue=document.getElementById('angleValue');
       const powerValue=document.getElementById('powerValue');
       const fire=document.getElementById('fire');
       let deepest=null;
+      let introTimer=null;
+      let embeddedStarted=false;
 
       function nestedDocuments(){
         try{
@@ -61,21 +68,36 @@
         return nestedDocuments().reverse().find(d=>d.getElementById('angle')&&d.getElementById('power')&&d.getElementById('fire'))||null;
       }
 
-      function startEmbeddedGame(){
-        const docs=nestedDocuments();
-        for(const doc of docs){
+      function clickEmbeddedBegin(){
+        for(const doc of nestedDocuments()){
           const embeddedBegin=doc.getElementById('begin');
+          if(embeddedBegin&&!embeddedBegin.disabled){
+            embeddedBegin.click();
+            embeddedStarted=true;
+          }
+        }
+        return embeddedStarted;
+      }
+
+      function finishIntro(){
+        clearTimeout(introTimer);
+        for(const doc of nestedDocuments()){
           const embeddedOpen=doc.getElementById('open');
-          if(embeddedBegin&&!embeddedBegin.disabled)embeddedBegin.click();
           if(embeddedOpen)embeddedOpen.hidden=true;
         }
-        setTimeout(()=>{
-          for(const doc of nestedDocuments()){
-            const embeddedOpen=doc.getElementById('open');
-            if(embeddedOpen)embeddedOpen.hidden=true;
-          }
-          bind();
-        },120);
+        intro.style.display='none';
+        bind();
+        setTimeout(bind,120);
+        setTimeout(bind,450);
+      }
+
+      function beginEmbeddedWhenReady(attempt=0){
+        if(clickEmbeddedBegin()){
+          introTimer=setTimeout(finishIntro,16400);
+          return;
+        }
+        if(attempt<80)setTimeout(()=>beginEmbeddedWhenReady(attempt+1),100);
+        else finishIntro();
       }
 
       function styleGame(doc){
@@ -121,11 +143,12 @@
       begin.addEventListener('click',async()=>{
         begin.disabled=true;
         await enterFullscreen();
-        startEmbeddedGame();
         start.hidden=true;
-        setTimeout(bind,120);
-        setTimeout(bind,450);
+        intro.style.display='grid';
+        beginEmbeddedWhenReady();
       });
+
+      skipIntro.addEventListener('click',finishIntro);
 
       frame.addEventListener('load',()=>{setTimeout(bind,100);setTimeout(bind,500);setTimeout(bind,1200)});
       document.addEventListener('fullscreenchange',()=>{setTimeout(bind,100);setTimeout(bind,350)});
@@ -134,7 +157,7 @@
         if(!deepest&&!bind())return;
         const a=deepest.getElementById('angle'),p=deepest.getElementById('power'),f=deepest.getElementById('fire');
         if(document.activeElement!==angle&&a){angle.value=a.value;angleValue.textContent=angle.value+'°'}
-        if(document.activeElement!==power&&p){power.value=p.value;powerValue.textContent=power.value}
+        if(document.activeElement!==power&&p){power.value=p.value;powerValue.textContent=p.value}
         if(f){fire.disabled=f.disabled;fire.textContent=f.textContent||'FIRE'}
       },180);
     })();
