@@ -8,19 +8,18 @@
   <style>
     *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
     html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#151817;overscroll-behavior:none;touch-action:none;font-family:system-ui,sans-serif}
-    #gameHost{position:absolute;inset:34px 0 84px 0;overflow:hidden;background:#151817}
+    #gameHost{position:absolute;inset:0 0 70px 0;overflow:hidden;background:#151817}
     #gameFrame{width:100%;height:100%;border:0;display:block;background:#151817}
-    #levelBar{position:absolute;top:0;left:0;right:0;height:34px;z-index:10;display:flex;align-items:center;gap:6px;padding:3px calc(8px + env(safe-area-inset-right)) 3px calc(8px + env(safe-area-inset-left));border-bottom:1px solid rgba(255,255,255,.18);background:#172033;color:#f5f7fb;font-size:10px;font-weight:800;letter-spacing:.06em}
-    #level{height:27px;max-width:210px;border:1px solid #607089;border-radius:6px;background:#18253a;color:#fff;font-weight:700}
-    #controls{position:absolute;left:0;right:0;bottom:0;height:84px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 116px;gap:7px;align-items:center;padding:5px calc(8px + env(safe-area-inset-right)) calc(5px + env(safe-area-inset-bottom)) calc(8px + env(safe-area-inset-left));background:#172033;border-top:1px solid rgba(255,255,255,.18);color:#f5f7fb}
-    .control{display:grid;grid-template-rows:auto 48px;gap:2px;min-width:0;font-size:10px;font-weight:800;letter-spacing:.04em}
-    .controlHead{display:flex;justify-content:space-between;align-items:center;padding:0 3px}
-    .precision{display:grid;grid-template-columns:38px minmax(0,1fr) 38px;gap:5px;align-items:center;min-width:0}
-    .precision input{width:100%;height:44px;min-width:0;touch-action:manipulation}
-    .step{height:42px;border:1px solid #607089;border-radius:8px;background:#263247;color:#f5f7fb;font-size:24px;font-weight:900;line-height:1;touch-action:manipulation}
+    #controls{position:absolute;left:0;right:0;bottom:0;height:70px;display:grid;grid-template-columns:145px minmax(0,1fr) minmax(0,1fr) 100px;gap:5px;align-items:center;padding:4px calc(6px + env(safe-area-inset-right)) calc(4px + env(safe-area-inset-bottom)) calc(6px + env(safe-area-inset-left));background:#172033;border-top:1px solid rgba(255,255,255,.18);color:#f5f7fb}
+    #levelBox,.control{display:grid;grid-template-rows:auto 40px;gap:1px;min-width:0;font-size:9px;font-weight:800;letter-spacing:.04em}
+    #level{width:100%;height:38px;min-width:0;border:1px solid #607089;border-radius:7px;background:#18253a;color:#fff;font-size:11px;font-weight:700}
+    .controlHead{display:flex;justify-content:space-between;align-items:center;padding:0 2px}
+    .precision{display:grid;grid-template-columns:32px minmax(0,1fr) 32px;gap:3px;align-items:center;min-width:0}
+    .precision input{width:100%;height:38px;min-width:0;touch-action:manipulation}
+    .step{height:36px;padding:0;border:1px solid #607089;border-radius:7px;background:#263247;color:#f5f7fb;font-size:21px;font-weight:900;line-height:1;touch-action:manipulation}
     .step:disabled{opacity:.45}
-    .control output{min-width:34px;text-align:right}
-    #fire{height:54px;border:0;border-radius:9px;background:#f1b84b;color:#241707;font-weight:900;font-size:16px;letter-spacing:.08em;touch-action:manipulation}
+    .control output{min-width:30px;text-align:right}
+    #fire{height:46px;border:0;border-radius:8px;background:#f1b84b;color:#241707;font-weight:900;font-size:14px;letter-spacing:.07em;touch-action:manipulation}
     #fire:disabled{opacity:.45}
     #start,#intro,#rotate{position:fixed;inset:0;z-index:20;display:grid;place-items:center;padding:24px;background:#151817;color:#efe6ca;text-align:center}
     #start[hidden],#intro[hidden],#rotate[hidden]{display:none!important}
@@ -36,19 +35,10 @@
 </head>
 <body>
   <div id="gameHost"><iframe id="gameFrame" src="level8-app.html?v=19" title="Ballistics artillery game" allow="fullscreen"></iframe></div>
-  <label id="levelBar">LEVEL
-    <select id="level" aria-label="Choose level">
-      <option value="1">1 · Open Hills</option>
-      <option value="2">2 · High Ground</option>
-      <option value="3">3 · Trenches</option>
-      <option value="4">4 · Timber Defenses</option>
-      <option value="5">5 · Stone Defenses</option>
-      <option value="6">6 · Stone Tower</option>
-      <option value="7">7 · Three-Story Tower</option>
-      <option value="8">8 · Archer Siege</option>
-    </select>
-  </label>
   <section id="controls" aria-label="Cannon controls">
+    <label id="levelBox"><span>LEVEL</span><select id="level" aria-label="Choose level">
+      <option value="1">1 · Open Hills</option><option value="2">2 · High Ground</option><option value="3">3 · Trenches</option><option value="4">4 · Timber Defenses</option><option value="5">5 · Stone Defenses</option><option value="6">6 · Stone Tower</option><option value="7">7 · Three-Story Tower</option><option value="8">8 · Archer Siege</option>
+    </select></label>
     <label class="control"><span class="controlHead"><span>ANGLE</span><output id="angleValue">45°</output></span><span class="precision"><button id="angleMinus" class="step" type="button" aria-label="Decrease angle">−</button><input id="angle" type="range" min="10" max="80" value="45" step="1"><button id="anglePlus" class="step" type="button" aria-label="Increase angle">+</button></span></label>
     <label class="control"><span class="controlHead"><span>POWER</span><output id="powerValue">70</output></span><span class="precision"><button id="powerMinus" class="step" type="button" aria-label="Decrease power">−</button><input id="power" type="range" min="30" max="120" value="70" step="1"><button id="powerPlus" class="step" type="button" aria-label="Increase power">+</button></span></label>
     <button id="fire" type="button" disabled>FIRE</button>
@@ -58,156 +48,23 @@
   <div id="rotate"><div class="card"><h1 class="title">ROTATE</h1><p class="sub">Turn your phone sideways.</p></div></div>
   <script>
     (()=>{
-      const frame=document.getElementById('gameFrame');
-      const start=document.getElementById('start');
-      const intro=document.getElementById('intro');
-      const begin=document.getElementById('begin');
-      const skipIntro=document.getElementById('skipIntro');
-      const level=document.getElementById('level');
-      const angle=document.getElementById('angle');
-      const power=document.getElementById('power');
-      const angleValue=document.getElementById('angleValue');
-      const powerValue=document.getElementById('powerValue');
-      const angleMinus=document.getElementById('angleMinus');
-      const anglePlus=document.getElementById('anglePlus');
-      const powerMinus=document.getElementById('powerMinus');
-      const powerPlus=document.getElementById('powerPlus');
-      const fire=document.getElementById('fire');
-      let deepest=null;
-      let introTimer=null;
-      let embeddedStarted=false;
-      let currentLevel=1;
-
-      function nestedDocuments(){
-        try{
-          const d1=frame.contentDocument;
-          const f1=d1&&d1.querySelector('#g');
-          const d2=f1&&f1.contentDocument;
-          const f2=d2&&d2.querySelector('#g');
-          const d3=f2&&f2.contentDocument;
-          return [d1,d2,d3].filter(Boolean);
-        }catch(_){return []}
-      }
-
-      function findGameDocument(){
-        return nestedDocuments().reverse().find(d=>d.getElementById('angle')&&d.getElementById('power')&&d.getElementById('fire'))||null;
-      }
-
-      function clickEmbeddedBegin(){
-        for(const doc of nestedDocuments()){
-          const embeddedBegin=doc.getElementById('begin');
-          if(embeddedBegin&&!embeddedBegin.disabled){embeddedBegin.click();embeddedStarted=true}
-        }
-        return embeddedStarted;
-      }
-
-      function finishIntro(){
-        clearTimeout(introTimer);
-        for(const doc of nestedDocuments()){
-          const embeddedOpen=doc.getElementById('open');
-          if(embeddedOpen)embeddedOpen.hidden=true;
-        }
-        intro.style.display='none';
-        bind();
-        setTimeout(bind,120);
-        setTimeout(bind,450);
-      }
-
-      function beginEmbeddedWhenReady(attempt=0){
-        if(clickEmbeddedBegin()){introTimer=setTimeout(finishIntro,16400);return}
-        if(attempt<80)setTimeout(()=>beginEmbeddedWhenReady(attempt+1),100);
-        else finishIntro();
-      }
-
-      function styleGame(doc){
-        if(!doc||doc.getElementById('mobile-shell-style'))return;
-        const s=doc.createElement('style');
-        s.id='mobile-shell-style';
-        s.textContent='html,body{width:100%!important;height:100%!important;margin:0!important;overflow:hidden!important}.game-shell{width:100%!important;height:100%!important;max-width:none!important;padding:2px 6px!important;gap:3px!important;grid-template-rows:22px minmax(0,1fr)!important}.topbar{min-height:22px!important;padding:0 3px!important}h1{display:none!important}.stage-label{font-size:.7rem!important;text-align:right!important}.canvas-wrap{min-height:0!important;height:100%!important}.controls,.readout{display:none!important}canvas{width:100%!important;height:100%!important;object-fit:contain!important;aspect-ratio:auto!important}';
-        doc.head.appendChild(s);
-      }
-
-      function bind(){
-        const doc=findGameDocument();
-        if(!doc)return false;
-        deepest=doc;
-        styleGame(doc);
-        const a=doc.getElementById('angle');
-        const p=doc.getElementById('power');
-        const f=doc.getElementById('fire');
-        if(!a||!p||!f)return false;
-        angle.value=a.value; power.value=p.value;
-        angleValue.textContent=angle.value+'°'; powerValue.textContent=power.value;
-        fire.disabled=f.disabled; fire.textContent=f.textContent||'FIRE';
-        for(const button of [angleMinus,anglePlus,powerMinus,powerPlus])button.disabled=f.disabled;
-        return true;
-      }
-
-      function dispatch(id,value){
-        if(!deepest&&!bind())return;
-        const el=deepest.getElementById(id);
-        if(!el)return;
-        el.value=value;
-        el.dispatchEvent(new Event('input',{bubbles:true}));
-        el.dispatchEvent(new Event('change',{bubbles:true}));
-      }
-
-      function step(control,direction){
-        const next=Math.max(Number(control.min),Math.min(Number(control.max),Number(control.value)+direction*(Number(control.step)||1)));
-        control.value=String(next);
-        control.dispatchEvent(new Event('input',{bubbles:true}));
-      }
-
-      angle.addEventListener('input',()=>{angleValue.textContent=angle.value+'°';dispatch('angle',angle.value)});
-      power.addEventListener('input',()=>{powerValue.textContent=power.value;dispatch('power',power.value)});
-      angleMinus.addEventListener('click',()=>step(angle,-1));
-      anglePlus.addEventListener('click',()=>step(angle,1));
-      powerMinus.addEventListener('click',()=>step(power,-1));
-      powerPlus.addEventListener('click',()=>step(power,1));
-      fire.addEventListener('click',()=>{if(!deepest&&!bind())return;deepest.getElementById('fire')?.click()});
-
-      level.addEventListener('change',()=>{
-        currentLevel=Number(level.value)||1;
-        deepest=null;
-        embeddedStarted=false;
-        frame.src='level8-app.html?v=19&level='+currentLevel;
-      });
-
-      async function enterFullscreen(){
-        try{if(!document.fullscreenElement)await document.documentElement.requestFullscreen()}catch(_){ }
-        try{await screen.orientation?.lock?.('landscape')}catch(_){ }
-      }
-
-      begin.addEventListener('click',async()=>{
-        begin.disabled=true;
-        await enterFullscreen();
-        start.hidden=true;
-        intro.style.display='grid';
-        beginEmbeddedWhenReady();
-      });
-
-      skipIntro.addEventListener('click',finishIntro);
-
-      frame.addEventListener('load',()=>{
-        setTimeout(bind,100);setTimeout(bind,500);setTimeout(bind,1200);
-        setTimeout(()=>{
-          for(const doc of nestedDocuments()){
-            const embeddedBegin=doc.getElementById('begin');
-            const embeddedOpen=doc.getElementById('open');
-            if(embeddedBegin&&!embeddedBegin.disabled)embeddedBegin.click();
-            if(embeddedOpen)embeddedOpen.hidden=true;
-          }
-        },450);
-      });
-      document.addEventListener('fullscreenchange',()=>{setTimeout(bind,100);setTimeout(bind,350)});
-      addEventListener('resize',()=>setTimeout(bind,100),{passive:true});
-      setInterval(()=>{
-        if(!deepest&&!bind())return;
-        const a=deepest.getElementById('angle'),p=deepest.getElementById('power'),f=deepest.getElementById('fire');
-        if(document.activeElement!==angle&&a){angle.value=a.value;angleValue.textContent=angle.value+'°'}
-        if(document.activeElement!==power&&p){power.value=p.value;powerValue.textContent=p.value}
-        if(f){fire.disabled=f.disabled;fire.textContent=f.textContent||'FIRE';for(const button of [angleMinus,anglePlus,powerMinus,powerPlus])button.disabled=f.disabled}
-      },180);
+      const frame=document.getElementById('gameFrame'),start=document.getElementById('start'),intro=document.getElementById('intro'),begin=document.getElementById('begin'),skipIntro=document.getElementById('skipIntro'),level=document.getElementById('level'),angle=document.getElementById('angle'),power=document.getElementById('power'),angleValue=document.getElementById('angleValue'),powerValue=document.getElementById('powerValue'),angleMinus=document.getElementById('angleMinus'),anglePlus=document.getElementById('anglePlus'),powerMinus=document.getElementById('powerMinus'),powerPlus=document.getElementById('powerPlus'),fire=document.getElementById('fire');
+      let deepest=null,introTimer=null,embeddedStarted=false,currentLevel=1;
+      function nestedDocuments(){try{const d1=frame.contentDocument,f1=d1&&d1.querySelector('#g'),d2=f1&&f1.contentDocument,f2=d2&&d2.querySelector('#g'),d3=f2&&f2.contentDocument;return[d1,d2,d3].filter(Boolean)}catch(_){return[]}}
+      function findGameDocument(){return nestedDocuments().reverse().find(d=>d.getElementById('angle')&&d.getElementById('power')&&d.getElementById('fire'))||null}
+      function clickEmbeddedBegin(){for(const doc of nestedDocuments()){const b=doc.getElementById('begin');if(b&&!b.disabled){b.click();embeddedStarted=true}}return embeddedStarted}
+      function finishIntro(){clearTimeout(introTimer);for(const doc of nestedDocuments()){const o=doc.getElementById('open');if(o)o.hidden=true}intro.style.display='none';bind();setTimeout(bind,120);setTimeout(bind,450)}
+      function beginEmbeddedWhenReady(attempt=0){if(clickEmbeddedBegin()){introTimer=setTimeout(finishIntro,16400);return}if(attempt<80)setTimeout(()=>beginEmbeddedWhenReady(attempt+1),100);else finishIntro()}
+      function styleGame(doc){if(!doc||doc.getElementById('mobile-shell-style'))return;const s=doc.createElement('style');s.id='mobile-shell-style';s.textContent='html,body{width:100%!important;height:100%!important;margin:0!important;overflow:hidden!important}.game-shell{width:100%!important;height:100%!important;max-width:none!important;padding:1px 4px!important;gap:2px!important;grid-template-rows:18px minmax(0,1fr)!important}.topbar{min-height:18px!important;padding:0 2px!important}h1{display:none!important}.stage-label{font-size:.62rem!important;text-align:right!important}.canvas-wrap{min-height:0!important;height:100%!important}.controls,.readout{display:none!important}canvas{width:100%!important;height:100%!important;object-fit:contain!important;aspect-ratio:auto!important}';doc.head.appendChild(s)}
+      function bind(){const doc=findGameDocument();if(!doc)return false;deepest=doc;styleGame(doc);const a=doc.getElementById('angle'),p=doc.getElementById('power'),f=doc.getElementById('fire');if(!a||!p||!f)return false;angle.value=a.value;power.value=p.value;angleValue.textContent=angle.value+'°';powerValue.textContent=power.value;fire.disabled=f.disabled;fire.textContent=f.textContent||'FIRE';for(const b of[angleMinus,anglePlus,powerMinus,powerPlus])b.disabled=f.disabled;return true}
+      function dispatch(id,value){if(!deepest&&!bind())return;const el=deepest.getElementById(id);if(!el)return;el.value=value;el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}))}
+      function step(control,direction){const next=Math.max(Number(control.min),Math.min(Number(control.max),Number(control.value)+direction*(Number(control.step)||1)));control.value=String(next);control.dispatchEvent(new Event('input',{bubbles:true}))}
+      angle.addEventListener('input',()=>{angleValue.textContent=angle.value+'°';dispatch('angle',angle.value)});power.addEventListener('input',()=>{powerValue.textContent=power.value;dispatch('power',power.value)});angleMinus.addEventListener('click',()=>step(angle,-1));anglePlus.addEventListener('click',()=>step(angle,1));powerMinus.addEventListener('click',()=>step(power,-1));powerPlus.addEventListener('click',()=>step(power,1));fire.addEventListener('click',()=>{if(!deepest&&!bind())return;deepest.getElementById('fire')?.click()});
+      level.addEventListener('change',()=>{currentLevel=Number(level.value)||1;deepest=null;embeddedStarted=false;frame.src='level8-app.html?v=19&level='+currentLevel});
+      async function enterFullscreen(){try{if(!document.fullscreenElement)await document.documentElement.requestFullscreen()}catch(_){}try{await screen.orientation?.lock?.('landscape')}catch(_){}}
+      begin.addEventListener('click',async()=>{begin.disabled=true;await enterFullscreen();start.hidden=true;intro.style.display='grid';beginEmbeddedWhenReady()});skipIntro.addEventListener('click',finishIntro);
+      frame.addEventListener('load',()=>{setTimeout(bind,100);setTimeout(bind,500);setTimeout(bind,1200);setTimeout(()=>{for(const doc of nestedDocuments()){const b=doc.getElementById('begin'),o=doc.getElementById('open');if(b&&!b.disabled)b.click();if(o)o.hidden=true}},450)});
+      document.addEventListener('fullscreenchange',()=>{setTimeout(bind,100);setTimeout(bind,350)});addEventListener('resize',()=>setTimeout(bind,100),{passive:true});setInterval(()=>{if(!deepest&&!bind())return;const a=deepest.getElementById('angle'),p=deepest.getElementById('power'),f=deepest.getElementById('fire');if(document.activeElement!==angle&&a){angle.value=a.value;angleValue.textContent=angle.value+'°'}if(document.activeElement!==power&&p){power.value=p.value;powerValue.textContent=p.value}if(f){fire.disabled=f.disabled;fire.textContent=f.textContent||'FIRE';for(const b of[angleMinus,anglePlus,powerMinus,powerPlus])b.disabled=f.disabled}},180);
     })();
   </script>
 </body>
