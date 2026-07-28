@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no,maximum-scale=1">
+  <meta name="theme-color" content="#151817">
+  <title>Ballistics Mobile</title>
+  <style>
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#151817;overscroll-behavior:none;touch-action:none;font-family:system-ui,sans-serif}
+    #gameHost{position:absolute;inset:0 0 76px 0;overflow:hidden;background:#151817}
+    #gameFrame{width:100%;height:100%;border:0;display:block;background:#151817}
+    #controls{position:absolute;left:0;right:0;bottom:0;height:76px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 120px;gap:8px;align-items:center;padding:6px calc(8px + env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom)) calc(8px + env(safe-area-inset-left));background:#172033;border-top:1px solid rgba(255,255,255,.18);color:#f5f7fb}
+    .control{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:6px;align-items:center;font-size:11px;font-weight:800;letter-spacing:.04em}
+    .control input{width:100%;height:44px;touch-action:manipulation}
+    .control output{min-width:30px;text-align:right}
+    #fire{height:52px;border:0;border-radius:9px;background:#f1b84b;color:#241707;font-weight:900;font-size:16px;letter-spacing:.08em;touch-action:manipulation}
+    #fire:disabled{opacity:.45}
+    #start,#rotate{position:fixed;inset:0;z-index:20;display:grid;place-items:center;padding:24px;background:#151817;color:#efe6ca;text-align:center}
+    #rotate{display:none;z-index:30}
+    .card{max-width:420px}
+    .title{margin:0 0 12px;font:900 clamp(2rem,8vw,4rem)/.95 Georgia,serif;letter-spacing:.08em}
+    .sub{margin:0 0 22px;color:#bdb59f;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+    #begin{padding:14px 30px;border:0;background:#d8bd76;color:#1b1c18;font-weight:900;font-size:17px;letter-spacing:.12em}
+    @media (orientation:portrait){#rotate{display:grid}}
+  </style>
+</head>
+<body>
+  <div id="gameHost"><iframe id="gameFrame" src="level8-app.html?v=18" title="Ballistics artillery game" allow="fullscreen"></iframe></div>
+  <section id="controls" aria-label="Cannon controls">
+    <label class="control">ANGLE<input id="angle" type="range" min="10" max="80" value="45" step="1"><output id="angleValue">45°</output></label>
+    <label class="control">POWER<input id="power" type="range" min="30" max="120" value="70" step="1"><output id="powerValue">70</output></label>
+    <button id="fire" type="button" disabled>FIRE</button>
+  </section>
+  <div id="start"><div class="card"><h1 class="title">BALLISTICS</h1><p class="sub">Mobile landscape mode</p><button id="begin" type="button">BEGIN</button></div></div>
+  <div id="rotate"><div class="card"><h1 class="title">ROTATE</h1><p class="sub">Turn your phone sideways.</p></div></div>
+  <script>
+    (()=>{
+      const frame=document.getElementById('gameFrame');
+      const start=document.getElementById('start');
+      const begin=document.getElementById('begin');
+      const angle=document.getElementById('angle');
+      const power=document.getElementById('power');
+      const angleValue=document.getElementById('angleValue');
+      const powerValue=document.getElementById('powerValue');
+      const fire=document.getElementById('fire');
+      let deepest=null;
+
+      function findGameDocument(){
+        try{
+          const d1=frame.contentDocument;
+          const f1=d1&&d1.querySelector('#g');
+          const d2=f1&&f1.contentDocument;
+          const f2=d2&&d2.querySelector('#g');
+          const d3=f2&&f2.contentDocument;
+          const docs=[d3,d2,d1].filter(Boolean);
+          return docs.find(d=>d.getElementById('angle')&&d.getElementById('power')&&d.getElementById('fire'))||null;
+        }catch(_){return null}
+      }
+
+      function styleGame(doc){
+        if(!doc||doc.getElementById('mobile-shell-style'))return;
+        const s=doc.createElement('style');
+        s.id='mobile-shell-style';
+        s.textContent='html,body{width:100%!important;height:100%!important;margin:0!important;overflow:hidden!important}.game-shell{width:100%!important;height:100%!important;max-width:none!important;padding:2px 6px!important;gap:3px!important;grid-template-rows:22px minmax(0,1fr)!important}.topbar{min-height:22px!important;padding:0 3px!important}h1{display:none!important}.stage-label{font-size:.7rem!important;text-align:left!important}.canvas-wrap{min-height:0!important;height:100%!important}.controls,.readout{display:none!important}canvas{width:100%!important;height:100%!important;object-fit:contain!important;aspect-ratio:auto!important}';
+        doc.head.appendChild(s);
+      }
+
+      function bind(){
+        const doc=findGameDocument();
+        if(!doc)return false;
+        deepest=doc;
+        styleGame(doc);
+        const a=doc.getElementById('angle');
+        const p=doc.getElementById('power');
+        const f=doc.getElementById('fire');
+        if(!a||!p||!f)return false;
+        angle.value=a.value; power.value=p.value;
+        angleValue.textContent=angle.value+'°'; powerValue.textContent=power.value;
+        fire.disabled=f.disabled; fire.textContent=f.textContent||'FIRE';
+        return true;
+      }
+
+      function dispatch(id,value){
+        if(!deepest&&!bind())return;
+        const el=deepest.getElementById(id);
+        if(!el)return;
+        el.value=value;
+        el.dispatchEvent(new Event('input',{bubbles:true}));
+      }
+
+      angle.addEventListener('input',()=>{angleValue.textContent=angle.value+'°';dispatch('angle',angle.value)});
+      power.addEventListener('input',()=>{powerValue.textContent=power.value;dispatch('power',power.value)});
+      fire.addEventListener('click',()=>{if(!deepest&&!bind())return;deepest.getElementById('fire')?.click()});
+
+      async function enterFullscreen(){
+        try{if(!document.fullscreenElement)await document.documentElement.requestFullscreen()}catch(_){ }
+        try{await screen.orientation?.lock?.('landscape')}catch(_){ }
+        setTimeout(bind,120);
+        setTimeout(bind,450);
+      }
+
+      begin.addEventListener('click',async()=>{
+        await enterFullscreen();
+        start.hidden=true;
+        bind();
+      });
+
+      frame.addEventListener('load',()=>{setTimeout(bind,100);setTimeout(bind,500);setTimeout(bind,1200)});
+      document.addEventListener('fullscreenchange',()=>{setTimeout(bind,100);setTimeout(bind,350)});
+      addEventListener('resize',()=>setTimeout(bind,100),{passive:true});
+      setInterval(()=>{
+        if(!deepest&&!bind())return;
+        const a=deepest.getElementById('angle'),p=deepest.getElementById('power'),f=deepest.getElementById('fire');
+        if(document.activeElement!==angle&&a){angle.value=a.value;angleValue.textContent=angle.value+'°'}
+        if(document.activeElement!==power&&p){power.value=p.value;powerValue.textContent=power.value}
+        if(f){fire.disabled=f.disabled;fire.textContent=f.textContent||'FIRE'}
+      },180);
+    })();
+  </script>
+</body>
+</html>
