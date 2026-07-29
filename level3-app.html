@@ -2,7 +2,7 @@
 (async()=>{
   try{
     const start=Math.max(1,Math.min(7,Number(new URLSearchParams(location.search).get("level"))||1));
-    let h=await fetch("app.html",{cache:"no-store"}).then(r=>{if(!r.ok)throw Error(r.status);return r.text()});
+    let h=window.__ballisticsFiles?.["app.html"]??await fetch("app.html",{cache:"no-store"}).then(r=>{if(!r.ok)throw Error(r.status);return r.text()});
     h=h.replace('let L=1,M=Math,T=terrainY;','let L='+start+',M=Math,T=terrainY;');
     h=h.replace(
       'terrainY=x=>L<2?T(x):444-40*M.exp(-(((x-110)/170)**2))-120*M.exp(-(((x-855)/150)**2))+40*M.exp(-(((x-480)/210)**2))+5*M.sin(x*.022)+3*M.sin(x*.051);',

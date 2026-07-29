@@ -1,7 +1,10 @@
 <!doctype html><html><head><meta charset="utf-8"><title>Ballistics</title></head><body><script>
 (async()=>{
   try{
-    let s=await fetch("level8-app.html",{cache:"no-store"}).then(r=>{if(!r.ok)throw Error(r.status);return r.text()});
+    const files=["level8-app.html","level3-app.html","app.html","game.html"];
+    const loaded=await Promise.all(files.map(name=>fetch(name,{cache:"no-store"}).then(r=>{if(!r.ok)throw Error(r.status);return r.text()})));
+    window.__ballisticsFiles=Object.fromEntries(files.map((name,i)=>[name,loaded[i]]));
+    let s=window.__ballisticsFiles["level8-app.html"];
     s=s.replace("Math.min(8,Number","Math.min(9,Number");
     s=s.replace('L==6?" · Stone Tower":L==7?" · Three-Story Tower":" · Archer Siege"','L==6?" · Stone Tower":L==7?" · Three-Story Tower":L==8?" · Archer Siege":" · Drawbridge"');
     s=s.replace('let A=w=="player"&&L<8;','let A=w=="player"&&L<9;');
