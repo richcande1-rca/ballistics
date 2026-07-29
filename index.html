@@ -20,7 +20,7 @@
   </style>
 </head>
 <body>
-  <iframe id="app" src="level8-app.html?v=17" title="Ballistics artillery game" scrolling="no" allow="fullscreen"></iframe>
+  <iframe id="app" src="level9-app.html?v=1" title="Ballistics artillery game" scrolling="no" allow="fullscreen"></iframe>
   <div id="rotate" role="status" aria-live="polite"><div class="card"><div class="phone" aria-hidden="true"></div><strong>ROTATE TO LANDSCAPE</strong><span>Turn your phone sideways to play Ballistics.</span></div></div>
   <script>
     (()=>{
@@ -83,7 +83,7 @@
         select.style.color="#fff";
         select.style.border="1px solid #607089";
         select.setAttribute("aria-label","Temporary level selector");
-        const names=["Open Hills","High Ground","Trenches","Timber Defenses","Stone Defenses","Stone Tower","Three-Story Tower","Archer Siege"];
+        const names=["Open Hills","High Ground","Trenches","Timber Defenses","Stone Defenses","Stone Tower","Three-Story Tower","Archer Siege","Drawbridge"];
         names.forEach((name,i)=>{
           const option=game.createElement("option");
           option.value=String(i+1);
@@ -94,7 +94,7 @@
         select.value=String(current);
         select.addEventListener("change",()=>{
           skipRestart=true;
-          frame.src=`level8-app.html?v=17&level=${select.value}`;
+          frame.src=`level9-app.html?v=1&level=${select.value}`;
         });
         wrap.appendChild(select);
         stage.after(wrap);
@@ -132,7 +132,7 @@
         let floor=2;
         const refresh=()=>{
           const selectedLevel=Number(new URL(frame.src,location.href).searchParams.get("level"))||1;
-          const onTowerLevel=selectedLevel>=7||stage.textContent.includes("Three-Story Tower")||stage.textContent.includes("Archer Siege");
+          const onTowerLevel=selectedLevel===7||selectedLevel===8||stage.textContent.includes("Three-Story Tower")||stage.textContent.includes("Archer Siege");
           controls.style.display=onTowerLevel?"flex":"none";
           label.textContent=["BOTTOM","MIDDLE","TOP"][floor];
           down.disabled=floor===0;
