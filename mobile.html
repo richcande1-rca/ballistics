@@ -34,10 +34,10 @@
   </style>
 </head>
 <body>
-  <div id="gameHost"><iframe id="gameFrame" src="level8-app.html?v=19" title="Ballistics artillery game" allow="fullscreen"></iframe></div>
+  <div id="gameHost"><iframe id="gameFrame" src="level9-app.html?v=1" title="Ballistics artillery game" allow="fullscreen"></iframe></div>
   <section id="controls" aria-label="Cannon controls">
     <label id="levelBox"><span>LEVEL</span><select id="level" aria-label="Choose level">
-      <option value="1">1 · Open Hills</option><option value="2">2 · High Ground</option><option value="3">3 · Trenches</option><option value="4">4 · Timber Defenses</option><option value="5">5 · Stone Defenses</option><option value="6">6 · Stone Tower</option><option value="7">7 · Three-Story Tower</option><option value="8">8 · Archer Siege</option>
+      <option value="1">1 · Open Hills</option><option value="2">2 · High Ground</option><option value="3">3 · Trenches</option><option value="4">4 · Timber Defenses</option><option value="5">5 · Stone Defenses</option><option value="6">6 · Stone Tower</option><option value="7">7 · Three-Story Tower</option><option value="8">8 · Archer Siege</option><option value="9">9 · Drawbridge</option>
     </select></label>
     <label class="control"><span class="controlHead"><span>ANGLE</span><output id="angleValue">45°</output></span><span class="precision"><button id="angleMinus" class="step" type="button" aria-label="Decrease angle">−</button><input id="angle" type="range" min="10" max="80" value="45" step="1"><button id="anglePlus" class="step" type="button" aria-label="Increase angle">+</button></span></label>
     <label class="control"><span class="controlHead"><span>POWER</span><output id="powerValue">70</output></span><span class="precision"><button id="powerMinus" class="step" type="button" aria-label="Decrease power">−</button><input id="power" type="range" min="30" max="120" value="70" step="1"><button id="powerPlus" class="step" type="button" aria-label="Increase power">+</button></span></label>
@@ -60,7 +60,7 @@
       function dispatch(id,value){if(!deepest&&!bind())return;const el=deepest.getElementById(id);if(!el)return;el.value=value;el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}))}
       function step(control,direction){const next=Math.max(Number(control.min),Math.min(Number(control.max),Number(control.value)+direction*(Number(control.step)||1)));control.value=String(next);control.dispatchEvent(new Event('input',{bubbles:true}))}
       angle.addEventListener('input',()=>{angleValue.textContent=angle.value+'°';dispatch('angle',angle.value)});power.addEventListener('input',()=>{powerValue.textContent=power.value;dispatch('power',power.value)});angleMinus.addEventListener('click',()=>step(angle,-1));anglePlus.addEventListener('click',()=>step(angle,1));powerMinus.addEventListener('click',()=>step(power,-1));powerPlus.addEventListener('click',()=>step(power,1));fire.addEventListener('click',()=>{if(!deepest&&!bind())return;deepest.getElementById('fire')?.click()});
-      level.addEventListener('change',()=>{currentLevel=Number(level.value)||1;deepest=null;embeddedStarted=false;frame.src='level8-app.html?v=19&level='+currentLevel});
+      level.addEventListener('change',()=>{currentLevel=Number(level.value)||1;deepest=null;embeddedStarted=false;frame.src='level9-app.html?v=1&level='+currentLevel});
       async function enterFullscreen(){try{if(!document.fullscreenElement)await document.documentElement.requestFullscreen()}catch(_){}try{await screen.orientation?.lock?.('landscape')}catch(_){}}
       begin.addEventListener('click',async()=>{begin.disabled=true;await enterFullscreen();start.hidden=true;intro.style.display='grid';beginEmbeddedWhenReady()});skipIntro.addEventListener('click',finishIntro);
       frame.addEventListener('load',()=>{setTimeout(bind,100);setTimeout(bind,500);setTimeout(bind,1200);setTimeout(()=>{for(const doc of nestedDocuments()){const b=doc.getElementById('begin'),o=doc.getElementById('open');if(b&&!b.disabled)b.click();if(o)o.hidden=true}},450)});
