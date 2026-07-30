@@ -99,3 +99,13 @@ test("the final generated game scripts parse", async () => {
   assert.ok(scripts.length > 0, "generated game contains no scripts");
   for (const script of scripts) assert.doesNotThrow(() => new vm.Script(script));
 });
+
+test("Level 9 sweeps shots across the visible chain segments", () => {
+  const source = files.get("level9-app.html");
+  assert.ok(source.includes("bg.moveTo(826,gy-72);bg.lineTo(824,top+18)"));
+  assert.ok(source.includes("bg.moveTo(878,gy-72);bg.lineTo(880,top+18)"));
+  assert.ok(source.includes("SD(p.x,p.y,nx,ny,826,gy-72,824,top+18)<4.25"));
+  assert.ok(source.includes("SD(p.x,p.y,nx,ny,878,gy-72,880,top+18)<4.25"));
+  assert.ok(!source.includes("Math.hypot(nx-804,ny-(top+18))<18"));
+  assert.ok(!source.includes("Math.hypot(nx-900,ny-(top+18))<18"));
+});
