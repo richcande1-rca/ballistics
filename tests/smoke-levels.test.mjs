@@ -112,3 +112,9 @@ test("Level 9 sweeps shots across the visible chain segments", () => {
   assert.ok(!source.includes("Math.hypot(nx-804,ny-(top+18))<18"));
   assert.ok(!source.includes("Math.hypot(nx-900,ny-(top+18))<18"));
 });
+
+test("Level 9 moves the enemy cannon onto the lowered drawbridge", () => {
+  const source = files.get("level9-app.html");
+  assert.ok(source.includes('L==9&&GATE.down&&s=="cpu"?{x:750,y:terrainY(852)-20}'));
+  assert.ok(source.includes("bg.transform(-1,-.08,.22,.45,0,0)"));
+});
