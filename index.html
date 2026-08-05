@@ -83,7 +83,7 @@
         select.style.color="#fff";
         select.style.border="1px solid #607089";
         select.setAttribute("aria-label","Temporary level selector");
-        const names=["Open Hills","High Ground","Trenches","Timber Defenses","Stone Defenses","Stone Tower","Three-Story Tower","Archer Siege","Drawbridge"];
+        const names=["Open Hills","High Ground","Trenches","Timber Defenses","Stone Defenses","Stone Tower","Tower Battery","Archer Siege","Drawbridge"];
         names.forEach((name,i)=>{
           const option=game.createElement("option");
           option.value=String(i+1);
@@ -129,18 +129,20 @@
           button.style.fontSize="11px";
           button.style.letterSpacing=".06em";
         }
-        let floor=2;
+        let floor=2,usable=[true,true,true],moved=false;
         const refresh=()=>{
           const selectedLevel=Number(new URL(frame.src,location.href).searchParams.get("level"))||1;
-          const onTowerLevel=selectedLevel>=7||stage.textContent.includes("Three-Story Tower")||stage.textContent.includes("Archer Siege");
+          const onTowerLevel=selectedLevel>=7||stage.textContent.includes("Tower Battery")||stage.textContent.includes("Archer Siege");
           controls.style.display=onTowerLevel?"flex":"none";
-          label.textContent=["BOTTOM","MIDDLE","TOP"][floor];
-          down.disabled=floor===0;
-          up.disabled=floor===2;
+          label.textContent=["BOTTOM","MIDDLE","TOP"][floor]+(moved?" · MOVED":"");
+          down.disabled=moved||floor===0||!usable[floor-1];
+          up.disabled=moved||floor===2||!usable[floor+1];
+          down.title=!usable[floor-1]?"Adjacent floor collapsed":moved?"Reposition already used this turn":"";
+          up.title=!usable[floor+1]?"Adjacent floor collapsed":moved?"Reposition already used this turn":"";
         };
         down.addEventListener("click",()=>gameFrame.contentWindow.moveTower?.(-1));
         up.addEventListener("click",()=>gameFrame.contentWindow.moveTower?.(1));
-        game.addEventListener("tower-floor-change",event=>{floor=event.detail.floor;refresh()});
+        game.addEventListener("tower-floor-change",event=>{floor=event.detail.floor;usable=event.detail.usable||usable;moved=!!event.detail.moved;refresh()});
         new MutationObserver(refresh).observe(stage,{childList:true,characterData:true,subtree:true});
         controls.append(down,label,up);
         panel.appendChild(controls);
