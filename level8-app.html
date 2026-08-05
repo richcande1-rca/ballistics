@@ -8,7 +8,7 @@
     }catch(_){ }
     let s=window.__ballisticsFiles?.["level3-app.html"]??await fetch("level3-app.html",{cache:"no-store"}).then(r=>{if(!r.ok)throw Error(r.status);return r.text()});
     s=s.replace('Math.min(7,Number','Math.min(8,Number');
-    s=s.replace('L==6?" · Stone Tower":" · Three-Story Tower"','L==6?" · Stone Tower":L==7?" · Three-Story Tower":" · Archer Siege"');
+    s=s.replace('L==6?" · Stone Tower":" · Tower Battery"','L==6?" · Stone Tower":L==7?" · Tower Battery":" · Archer Siege"');
     s=s.replace('let A=w=="player"&&L<7;','let A=w=="player"&&L<8;');
     s=s.replace('if(state.winner=="player"&&L==7)L=1;','if(state.winner=="player"&&L==8)L=1;');
     s=s.replaceAll('L==7&&','L>=7&&');

@@ -6,7 +6,7 @@
     window.__ballisticsFiles=Object.fromEntries(files.map((name,i)=>[name,loaded[i]]));
     let s=window.__ballisticsFiles["level8-app.html"];
     s=s.replace("Math.min(8,Number","Math.min(9,Number");
-    s=s.replace('L==6?" · Stone Tower":L==7?" · Three-Story Tower":" · Archer Siege"','L==6?" · Stone Tower":L==7?" · Three-Story Tower":L==8?" · Archer Siege":" · Drawbridge"');
+    s=s.replace('L==6?" · Stone Tower":L==7?" · Tower Battery":" · Archer Siege"','L==6?" · Stone Tower":L==7?" · Tower Battery":L==8?" · Archer Siege":" · Drawbridge"');
     s=s.replace('let A=w=="player"&&L<8;','let A=w=="player"&&L<9;');
     s=s.replace('if(state.winner=="player"&&L==8)L=1;','if(state.winner=="player"&&L==9)L=1;');
     s=s.replace("s=s.replaceAll('L==7&&','L>=7&&');","s=s.replaceAll('L==7&&','(L==7||L==8)&&');");

@@ -10,7 +10,7 @@ const levels = [
   "Timber Defenses",
   "Stone Defenses",
   "Stone Tower",
-  "Three-Story Tower",
+  "Tower Battery",
   "Archer Siege",
   "Drawbridge",
 ];
