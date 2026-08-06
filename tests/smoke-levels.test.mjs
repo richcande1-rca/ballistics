@@ -100,6 +100,15 @@ test("the final generated game scripts parse", async () => {
   for (const script of scripts) assert.doesNotThrow(() => new vm.Script(script));
 });
 
+test("Level 8 archer volleys preserve per-floor tower health", () => {
+  const source = files.get("level8-app.html");
+  assert.ok(source.includes("let f=F.player;Z.player[f]=M.max(0,Z.player[f]-1)"));
+  assert.ok(source.includes("Z={player:[2,2,2],cpu:[2,2,2]}"));
+  assert.ok(source.includes("renderBackdrop();E7();if(Z.player[f]<=0)"));
+  assert.ok(!source.includes("Z.player--;"));
+  assert.ok(!source.includes("Z.player<=0"));
+});
+
 test("Level 9 sweeps shots across the visible chain segments", () => {
   const source = files.get("level9-app.html");
   assert.ok(source.includes("bg.moveTo(850,gy-72);bg.lineTo(824,top+18)"));
